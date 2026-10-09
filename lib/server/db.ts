@@ -69,11 +69,33 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 // One pool per server process; kept on globalThis so dev hot reloads reuse it.
 const g = globalThis as unknown as { __signflowPg?: { pool: Pool; ready: Promise<void> } };
 
-function connect() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is not set. Add your Postgres connection string to .env and restart the server.");
+/**
+ * The connection string, cleaned of the things that get pasted along with it
+ * into a host's settings page: quotes copied from a .env file, the variable
+ * name, or the `psql` command Neon shows. Left as they are, the driver cannot
+ * find a host in the value and tries to reach one called "base".
+ */
+function connectionUrl(): string {
+  const value = (process.env.DATABASE_URL ?? "")
+    .trim()
+    .replace(/^DATABASE_URL\s*=\s*/, "")
+    .replace(/^psql\s+/, "")
+    .replace(/^['"]+|['"]+$/g, "")
+    .trim();
+
+  if (!value) {
+    throw new Error("DATABASE_URL is not set. Add your Postgres connection string to the environment and restart the server.");
   }
+  if (!/^postgres(ql)?:\/\/[^/\s]+@[^/\s]+\/\S+/.test(value)) {
+    throw new Error(
+      "DATABASE_URL is not a valid Postgres connection string. It must look like postgresql://user:password@host/database, with no quotes or spaces around it.",
+    );
+  }
+  return value;
+}
+
+function connect() {
+  const connectionString = connectionUrl();
   // Opening a connection to a remote database takes seconds; a query on an open one takes
   // a fraction of that. So connections are kept open between requests instead of the
   // default of closing after ten idle seconds.
