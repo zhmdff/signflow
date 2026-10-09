@@ -1,5 +1,5 @@
 import type { Contract } from "@/lib/types";
-import { db } from "./db";
+import { query } from "./db";
 
 /** The most clauses a question is answered from, unless per-contract picks need more. */
 const MAX_CLAUSES = 16;
@@ -40,7 +40,8 @@ const SYNONYMS: [RegExp, string[]][] = [
 // Words in company names that do not identify the company.
 const GENERIC_NAME_WORDS = new Set(["llc", "ltd", "inc", "group", "services", "solutions", "systems", "agency", "company", "industries"]);
 
-const words = (text: string) => text.toLowerCase().match(/[a-z][a-z'-]{2,}/g) ?? [];
+// Letters only: these words are joined into a search expression, so nothing else may get in.
+const words = (text: string) => text.toLowerCase().match(/[a-z]{3,}/g) ?? [];
 
 function searchTerms(question: string): string[] {
   const terms = new Set<string>();
@@ -86,7 +87,11 @@ export function isFollowUp(question: string): boolean {
  * library every time. `previousQuestion` is used only when the question is a
  * follow-up and names no party itself.
  */
-export function retrieveClauses(question: string, inScope: Contract[], previousQuestion?: string): Retrieval {
+export async function retrieveClauses(
+  question: string,
+  inScope: Contract[],
+  previousQuestion?: string,
+): Promise<Retrieval> {
   const total = inScope.reduce((n, c) => n + c.clauses.length, 0);
 
   // A question that names a party is about that party's contract.
@@ -107,16 +112,13 @@ export function retrieveClauses(question: string, inScope: Contract[], previousQ
   if (terms.length === 0) return everything();
 
   // Best match first, across every candidate contract.
-  const ranked = db()
-    .prepare(
-      `SELECT contract_id, clause_id FROM clauses_fts
-       WHERE clauses_fts MATCH ? AND contract_id IN (SELECT value FROM json_each(?))
-       ORDER BY bm25(clauses_fts, 2.0, 1.0) LIMIT 400`,
-    )
-    .all(
-      terms.map((t) => `"${t.replace(/"/g, "")}"`).join(" OR "),
-      JSON.stringify(candidates.map((c) => c.id)),
-    ) as { contract_id: string; clause_id: string }[];
+  // Postgres stems both sides, so "renews" finds "renewal". Headings rank above body text.
+  const ranked = await query<{ contract_id: string; clause_id: string }>(
+    `SELECT contract_id, clause_id FROM clauses, to_tsquery('english', $1) q
+     WHERE tsv @@ q AND contract_id = ANY($2::text[])
+     ORDER BY ts_rank(tsv, q) DESC LIMIT 400`,
+    [terms.join(" | "), candidates.map((c) => c.id)],
+  );
 
   if (ranked.length < MIN_HITS) return everything();
 

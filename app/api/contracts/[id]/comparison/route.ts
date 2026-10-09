@@ -16,7 +16,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/contracts/[
   await connection();
   return respond(async () => {
     const { contract, terms } = await load((await ctx.params).id);
-    return { result: savedComparison(contract, terms) };
+    return { result: await savedComparison(contract, terms) };
   });
 }
 

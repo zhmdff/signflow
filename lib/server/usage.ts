@@ -1,30 +1,32 @@
 import type { Usage, UsageRow, UsageSummary } from "@/lib/types";
-import { db } from "./db";
+import { query } from "./db";
 
 /** What an AI call was for. Usage is reported per feature. */
 export type Feature = "ingest" | "compare" | "law_rules" | "law_impacts" | "ask";
 
-export function logUsage(feature: Feature, usage: Usage, cached: boolean): void {
+export async function logUsage(feature: Feature, usage: Usage, cached: boolean): Promise<void> {
   if (usage.promptTokens + usage.outputTokens === 0) return;
-  db()
-    .prepare(
-      "INSERT INTO usage (at, feature, model, prompt_tokens, output_tokens, cached) VALUES (?, ?, ?, ?, ?, ?)",
-    )
-    .run(new Date().toISOString(), feature, usage.model ?? null, usage.promptTokens, usage.outputTokens, cached ? 1 : 0);
+  try {
+    await query(
+      "INSERT INTO usage (feature, model, prompt_tokens, output_tokens, cached) VALUES ($1, $2, $3, $4, $5)",
+      [feature, usage.model ?? null, usage.promptTokens, usage.outputTokens, cached],
+    );
+  } catch (err) {
+    // Bookkeeping must never fail the request it is counting.
+    console.error("Could not log usage:", err instanceof Error ? err.message : err);
+  }
 }
 
-export function usageSummary(): UsageSummary {
-  const rows = db()
-    .prepare(
-      `SELECT feature,
-              SUM(cached = 0) AS calls,
-              SUM(CASE WHEN cached = 0 THEN prompt_tokens ELSE 0 END) AS promptTokens,
-              SUM(CASE WHEN cached = 0 THEN output_tokens ELSE 0 END) AS outputTokens,
-              SUM(cached = 1) AS cacheHits,
-              SUM(CASE WHEN cached = 1 THEN prompt_tokens + output_tokens ELSE 0 END) AS tokensSaved
-       FROM usage GROUP BY feature ORDER BY feature`,
-    )
-    .all() as UsageRow[];
+export async function usageSummary(): Promise<UsageSummary> {
+  const rows = await query<UsageRow>(
+    `SELECT feature,
+            (count(*) FILTER (WHERE NOT cached))::int AS calls,
+            COALESCE(sum(prompt_tokens) FILTER (WHERE NOT cached), 0)::int AS "promptTokens",
+            COALESCE(sum(output_tokens) FILTER (WHERE NOT cached), 0)::int AS "outputTokens",
+            (count(*) FILTER (WHERE cached))::int AS "cacheHits",
+            COALESCE(sum(prompt_tokens + output_tokens) FILTER (WHERE cached), 0)::int AS "tokensSaved"
+     FROM usage GROUP BY feature ORDER BY feature`,
+  );
 
   const total = rows.reduce(
     (sum, r) => ({

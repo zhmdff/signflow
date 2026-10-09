@@ -39,7 +39,7 @@ export async function askContracts(
   // A question that stands alone is answered alone: cheaper, and cacheable.
   const recent = isFollowUp(question) ? history.slice(-HISTORY_TURNS) : [];
   const previousQuestion = recent.findLast((t) => t.role === "user")?.text;
-  const retrieval = retrieveClauses(question, inScope, previousQuestion);
+  const retrieval = await retrieveClauses(question, inScope, previousQuestion);
 
   // Same question over the same clauses is the same answer, whatever else was said before.
   const key = cacheKey("ask", question.toLowerCase(), previousQuestion ?? null, retrieval.contracts);

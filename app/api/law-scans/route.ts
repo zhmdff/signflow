@@ -5,7 +5,7 @@ import { listContracts } from "@/lib/server/store";
 
 export async function GET() {
   await connection();
-  return respond(async () => ({ scans: listLawScans() }));
+  return respond(async () => ({ scans: await listLawScans() }));
 }
 
 export async function POST(request: Request) {

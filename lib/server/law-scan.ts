@@ -9,10 +9,10 @@ import type {
   Usage,
 } from "@/lib/types";
 import { addUsage, callModel } from "./ai";
-import { db } from "./db";
+import { query } from "./db";
 import { QUOTE_RULES, renderContract } from "./prompts";
 import { lawImpactSchema, lawRulesSchema } from "./schemas";
-import { cached, cacheKey, contractHash, readCache, writeCache } from "./store";
+import { cached, cacheKey, contractHash, readCacheMany, writeCache } from "./store";
 import { logUsage } from "./usage";
 import { appearsIn, citationStats, verifyQuote } from "./verify";
 
@@ -93,11 +93,13 @@ export async function scanLaw(
   const unchecked: Contract[] = [];
 
   if (rules.length > 0) {
+    // One query for every contract's stored check.
+    const stored = opts.force ? new Map<string, ContractCheck>() : await readCacheMany<ContractCheck>(contracts.map(checkKey));
     for (const contract of contracts) {
-      const hit = opts.force ? undefined : readCache<ContractCheck>(checkKey(contract));
+      const hit = stored.get(checkKey(contract));
       if (hit) {
         checks.set(contract.id, hit);
-        logUsage("law_impacts", hit.usage, true);
+        await logUsage("law_impacts", hit.usage, true);
       } else {
         unchecked.push(contract);
       }
@@ -140,7 +142,7 @@ export async function scanLaw(
       // The batch's cost is split evenly, as an estimate of what re-checking one contract would cost.
       const check = { impacts, usage: share(checked.usage, unchecked.length) };
       checks.set(contract.id, check);
-      writeCache(checkKey(contract), check);
+      await writeCache(checkKey(contract), check);
     }
   }
 
@@ -158,37 +160,34 @@ export async function scanLaw(
     cached: usage.calls === 0,
   };
 
-  db()
-    .prepare(
-      `INSERT INTO law_scans (id, at, title, law_text, result) VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET at = excluded.at, title = excluded.title, result = excluded.result`,
-    )
-    .run(result.id, new Date().toISOString(), result.lawTitle, text, JSON.stringify(result));
+  await query(
+    `INSERT INTO law_scans (id, title, law_text, result) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO UPDATE SET at = now(), title = excluded.title, result = excluded.result`,
+    [result.id, result.lawTitle, text, JSON.stringify(result)],
+  );
 
   return result;
 }
 
-export function listLawScans(): LawScanSummary[] {
-  const rows = db().prepare("SELECT id, at, title, result FROM law_scans ORDER BY at DESC").all() as {
-    id: string;
-    at: string;
-    title: string;
-    result: string;
-  }[];
-  return rows.map((row) => {
-    const result = JSON.parse(row.result) as LawScanResult;
-    return { id: row.id, at: row.at, title: row.title, rules: result.rules.length, impacts: result.impacts.length };
-  });
+export async function listLawScans(): Promise<LawScanSummary[]> {
+  const rows = await query<{ id: string; at: Date; title: string; rules: number; impacts: number }>(
+    `SELECT id, at, title,
+            json_array_length(result -> 'rules') AS rules,
+            json_array_length(result -> 'impacts') AS impacts
+     FROM law_scans ORDER BY at DESC`,
+  );
+  return rows.map((row) => ({ ...row, at: row.at.toISOString() }));
 }
 
 /** A past scan exactly as it was shown then. Contracts may have changed since. */
-export function getLawScan(id: string): { lawText: string; result: LawScanResult } | undefined {
-  const row = db().prepare("SELECT law_text, result FROM law_scans WHERE id = ?").get(id) as
-    | { law_text: string; result: string }
-    | undefined;
-  return row ? { lawText: row.law_text, result: { ...(JSON.parse(row.result) as LawScanResult), cached: true } } : undefined;
+export async function getLawScan(id: string): Promise<{ lawText: string; result: LawScanResult } | undefined> {
+  const rows = await query<{ law_text: string; result: LawScanResult }>(
+    "SELECT law_text, result FROM law_scans WHERE id = $1",
+    [id],
+  );
+  return rows[0] ? { lawText: rows[0].law_text, result: { ...rows[0].result, cached: true } } : undefined;
 }
 
-export function deleteLawScan(id: string): void {
-  db().prepare("DELETE FROM law_scans WHERE id = ?").run(id);
+export async function deleteLawScan(id: string): Promise<void> {
+  await query("DELETE FROM law_scans WHERE id = $1", [id]);
 }

@@ -61,7 +61,7 @@ export async function callModel<T>(
   opts: CallOptions,
 ): Promise<CallResult<T>> {
   const result = await route<T>(prompt, schema, opts);
-  logUsage(opts.feature, result.usage, false);
+  await logUsage(opts.feature, result.usage, false);
   return result;
 }
 

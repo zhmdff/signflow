@@ -4,5 +4,5 @@ import { usageSummary } from "@/lib/server/usage";
 
 export async function GET() {
   await connection();
-  return respond(async () => usageSummary());
+  return respond(usageSummary);
 }

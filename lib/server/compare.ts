@@ -54,8 +54,8 @@ const comparisonKey = (contract: Contract, terms: Contract) =>
   cacheKey("compare", contractHash(contract), contractHash(terms));
 
 /** The stored comparison for these two documents as they are now, if one exists. No model call. */
-export function savedComparison(contract: Contract, terms: Contract): CompareResult | null {
-  const hit = readCache<Omit<CompareResult, "cached">>(comparisonKey(contract, terms));
+export async function savedComparison(contract: Contract, terms: Contract): Promise<CompareResult | null> {
+  const hit = await readCache<Omit<CompareResult, "cached">>(comparisonKey(contract, terms));
   return hit ? { ...hit, cached: true } : null;
 }
 

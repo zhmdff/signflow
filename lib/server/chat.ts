@@ -1,24 +1,27 @@
 import type { AskResult, ChatMessage } from "@/lib/types";
-import { db } from "./db";
+import { query } from "./db";
 
-type Row = { id: number; role: "user" | "assistant"; text: string; result: string | null };
+type Row = { id: string; role: "user" | "assistant"; text: string; result: AskResult | null };
 
 const toMessage = (row: Row): ChatMessage =>
   row.role === "user"
     ? { id: String(row.id), role: "user", text: row.text }
-    : { id: String(row.id), role: "assistant", text: row.text, result: row.result ? (JSON.parse(row.result) as AskResult) : undefined };
+    : { id: String(row.id), role: "assistant", text: row.text, result: row.result ?? undefined };
 
-export function listMessages(): ChatMessage[] {
-  return (db().prepare("SELECT id, role, text, result FROM chat_messages ORDER BY id").all() as Row[]).map(toMessage);
+export async function listMessages(): Promise<ChatMessage[]> {
+  return (await query<Row>("SELECT id, role, text, result FROM chat_messages ORDER BY id")).map(toMessage);
 }
 
-export function addMessage(role: "user" | "assistant", text: string, result?: AskResult): ChatMessage {
-  const { lastInsertRowid } = db()
-    .prepare("INSERT INTO chat_messages (at, role, text, result) VALUES (?, ?, ?, ?)")
-    .run(new Date().toISOString(), role, text, result ? JSON.stringify(result) : null);
-  return toMessage({ id: Number(lastInsertRowid), role, text, result: result ? JSON.stringify(result) : null });
+/** Stores a question and its answer together, in order, in one round trip. */
+export async function addExchange(question: string, result: AskResult): Promise<ChatMessage[]> {
+  const rows = await query<Row>(
+    `INSERT INTO chat_messages (role, text, result) VALUES ('user', $1, NULL), ('assistant', $2, $3)
+     RETURNING id, role, text, result`,
+    [question, result.answer, JSON.stringify(result)],
+  );
+  return rows.sort((a, b) => Number(a.id) - Number(b.id)).map(toMessage);
 }
 
-export function clearMessages(): void {
-  db().prepare("DELETE FROM chat_messages").run();
+export async function clearMessages(): Promise<void> {
+  await query("DELETE FROM chat_messages");
 }
