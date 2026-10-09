@@ -1,0 +1,18 @@
+{
+  "id": "employee-rashad-aliyev",
+  "kind": "employee",
+  "title": "Employment Contract: Warehouse Shift Supervisor",
+  "counterparty": "Rashad Aliyev",
+  "source": "seed",
+  "fields": { "start": "2025-11-16", "end": "2026-11-15", "autoRenew": false, "noticeDays": 14, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "1.1", "heading": "Position", "text": "The Employee is employed as a Warehouse Shift Supervisor at the Company's Sumgayit distribution centre." },
+    { "id": "2.1", "heading": "Term", "text": "This contract is for a fixed term from 16 November 2025 to 15 November 2026." },
+    { "id": "3.1", "heading": "Shift pattern", "text": "The Employee shall work rotating shifts of eight (8) hours: the day shift from 06:00 to 14:00, the evening shift from 14:00 to 22:00 and the night shift from 22:00 to 06:00." },
+    { "id": "3.2", "heading": "Night shift allowance", "text": "The Employee shall receive an allowance of twenty percent (20%) of the hourly rate for each hour worked on the night shift." },
+    { "id": "4.1", "heading": "Salary", "text": "The Employee's gross monthly salary is AZN 1,900." },
+    { "id": "6.1", "heading": "Sick leave", "text": "The Employee is entitled to up to ten (10) days of sick leave per calendar year, paid at eighty percent (80%) of salary." },
+    { "id": "6.2", "heading": "Medical certificate", "text": "A medical certificate is required from the first day of any sickness absence." },
+    { "id": "7.1", "heading": "Notice", "text": "Either party may terminate this contract by giving fourteen (14) days' written notice." }
+  ]
+}

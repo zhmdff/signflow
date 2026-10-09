@@ -1,0 +1,18 @@
+{
+  "id": "partner-zenith",
+  "kind": "partner",
+  "title": "Marketing Services Retainer",
+  "counterparty": "Zenith Marketing Agency",
+  "source": "seed",
+  "fields": { "start": "2025-03-15", "end": "2027-03-14", "autoRenew": true, "noticeDays": 90, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "A", "heading": "What we do", "text": "Agency will run Client's social media, seasonal campaigns and in-store promo materials, as agreed month to month by email." },
+    { "id": "B", "heading": "Money", "text": "Retainer is AZN 12,000 a month, invoiced on the 1st. Client pays net seven (7) days. If Client is late, Agency may pause all work and charge a flat late fee of AZN 1,500 for each week of delay." },
+    { "id": "C", "heading": "Creative work", "text": "Campaign concepts, designs and copy are jointly owned by Agency and Client. Agency may reuse any concept for its other clients after six (6) months." },
+    { "id": "D", "heading": "If things go wrong", "text": "Agency is not responsible for any loss whatsoever, however caused, including where a campaign breaches advertising rules." },
+    { "id": "E", "heading": "How long", "text": "This retainer runs for two years from 15 March 2025 and then rolls over for another twenty-four (24) months each time, unless one side tells the other in writing ninety (90) days before the end." },
+    { "id": "F", "heading": "Getting out early", "text": "Client can end the retainer early only by paying the remaining monthly retainers for the rest of the term." },
+    { "id": "G", "heading": "Freelancers", "text": "Agency uses freelancers and partner studios as it sees fit." },
+    { "id": "H", "heading": "Law", "text": "Azerbaijani law applies and the Baku courts decide any dispute." }
+  ]
+}

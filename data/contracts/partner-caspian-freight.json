@@ -1,0 +1,20 @@
+{
+  "id": "partner-caspian-freight",
+  "kind": "partner",
+  "title": "Logistics Services Agreement",
+  "counterparty": "Caspian Freight Solutions LLC",
+  "source": "seed",
+  "fields": { "start": "2024-01-01", "end": "2026-12-31", "autoRenew": true, "noticeDays": 120, "governingLaw": "England and Wales" },
+  "clauses": [
+    { "id": "1.1", "heading": "Services", "text": "The Carrier shall collect, transport and deliver the Customer's goods between the Customer's warehouses and retail outlets as set out in Schedule 1." },
+    { "id": "2.1", "heading": "Loading access", "text": "The Customer shall ensure that its warehouse staff are available twenty-four (24) hours a day, seven (7) days a week, including between 21:00 and 06:00, to load and unload the Carrier's vehicles." },
+    { "id": "3.1", "heading": "Fees and payment", "text": "The Customer shall pay each invoice within ten (10) days of the invoice date." },
+    { "id": "3.2", "heading": "Late payment", "text": "Overdue amounts shall bear a penalty of two percent (2%) per day until paid in full, without limit." },
+    { "id": "4.1", "heading": "Liability of the Carrier", "text": "The Carrier's total liability for loss of or damage to goods shall not exceed AZN 5,000 per calendar year." },
+    { "id": "4.2", "heading": "Liability of the Customer", "text": "The Customer shall indemnify the Carrier against all losses arising from the Customer's breach, and the Customer's liability shall be unlimited." },
+    { "id": "5.1", "heading": "Term and renewal", "text": "This Agreement runs until 31 December 2026 and shall renew automatically for successive periods of twenty-four (24) months unless either party gives written notice of non-renewal at least one hundred and twenty (120) days before the end of the then-current term." },
+    { "id": "5.2", "heading": "Termination", "text": "The Customer may terminate this Agreement only for the Carrier's material breach that remains unremedied for ninety (90) days." },
+    { "id": "6.1", "heading": "Confidentiality", "text": "Each party shall keep the other's confidential information confidential for three (3) years after termination of this Agreement." },
+    { "id": "7.1", "heading": "Governing law", "text": "This Agreement is governed by the laws of England and Wales and the courts of London shall have exclusive jurisdiction." }
+  ]
+}

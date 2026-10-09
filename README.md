@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SignFlow
 
-## Getting Started
+SignFlow reads your contracts against your own terms and the law, so you find out about conflicts before a vendor or a fine does.
 
-First, run the development server:
+Every contract is stored as clauses with ids, and every AI answer must quote those clauses. Code then checks that each quote really appears in the source.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` (from [AI Studio](https://aistudio.google.com/apikey)). Then:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open http://localhost:3000. Without a key you can browse the contracts and the reminders page; compare, law scan, ask and upload need the key.
 
-## Learn More
+## Pages
 
-To learn more about Next.js, take a look at the following resources:
+| Route | What it does |
+|---|---|
+| `/` | Landing page |
+| `/dashboard` | Overview: counts, the four checks, next deadlines |
+| `/dashboard/contracts` | All contracts, the upload zone, and read / ask / compare per contract |
+| `/dashboard/compare` | Partner contract against our terms |
+| `/dashboard/law` | Law text against every stored contract |
+| `/dashboard/ask` | Questions answered with clause citations |
+| `/dashboard/reminders` | Notice deadlines and renewals (no AI) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Where things are
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `data/contracts/` holds one JSON file per contract. Uploads are written here too. `data/cache/` holds cached AI results.
+- `lib/server/` is the server side: `gemini.ts` (`callGemini`), `schemas.ts`, `ingest.ts`, `compare.ts`, `law-scan.ts`, `ask.ts`, and `verify.ts` (the quote verifier).
+- `app/api/` has one route per call. `lib/api.ts` is the typed client for them.
+- `stores/` holds the zustand stores, `hooks/` the hooks pages use, `components/` the shared UI.
+- `lib/reminders.ts` works out notice deadlines.
 
-## Deploy on Vercel
+## Not built yet
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `pnpm eval`: the answer key and the precision, recall and citation-validity table.
+- E-signing, accounts, email reminders and live law feeds.

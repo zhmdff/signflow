@@ -1,0 +1,20 @@
+{
+  "id": "employee-aysel-mammadova",
+  "kind": "employee",
+  "title": "Employment Contract: Sales Associate",
+  "counterparty": "Aysel Mammadova",
+  "source": "seed",
+  "fields": { "start": "2026-01-05", "end": "2026-12-31", "autoRenew": false, "noticeDays": 30, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "1.1", "heading": "Position", "text": "The Employee is employed as a Sales Associate at the Company's 28 May Street outlet in Baku." },
+    { "id": "2.1", "heading": "Term", "text": "This contract is for a fixed term from 5 January 2026 to 31 December 2026." },
+    { "id": "3.1", "heading": "Working hours", "text": "The Employee shall work forty (40) hours per week, from 09:00 to 18:00, Monday to Friday, with a one-hour lunch break." },
+    { "id": "4.1", "heading": "Salary", "text": "The Employee's gross monthly salary is AZN 1,400, paid on the last working day of each month." },
+    { "id": "5.1", "heading": "Annual leave", "text": "The Employee is entitled to twenty-one (21) calendar days of paid annual leave per year." },
+    { "id": "7.1", "heading": "Sick leave entitlement", "text": "The Employee is entitled to up to fourteen (14) days of sick leave per calendar year at full pay." },
+    { "id": "7.2", "heading": "Notification of sickness", "text": "The Employee shall notify her line manager by 10:00 on the first day of any sickness absence." },
+    { "id": "7.3", "heading": "Medical certificate", "text": "For any sickness absence of more than two (2) consecutive working days, the Employee shall provide a medical certificate within three (3) working days of returning to work. Sick leave without a required certificate is unpaid." },
+    { "id": "8.1", "heading": "Notice", "text": "Either party may terminate this contract by giving thirty (30) days' written notice." },
+    { "id": "9.1", "heading": "Confidentiality", "text": "The Employee shall not disclose the Company's customer lists or pricing during or after employment." }
+  ]
+}

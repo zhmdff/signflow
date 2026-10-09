@@ -1,0 +1,18 @@
+{
+  "id": "employee-leyla-hasanova",
+  "kind": "employee",
+  "title": "Employment Contract: Customer Support Agent",
+  "counterparty": "Leyla Hasanova",
+  "source": "seed",
+  "fields": { "start": "2024-06-03", "end": null, "autoRenew": false, "noticeDays": 30, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "1.1", "heading": "Position", "text": "The Employee is employed as a Customer Support Agent in the Company's Baku contact centre." },
+    { "id": "2.1", "heading": "Term", "text": "This contract is for an indefinite term starting on 3 June 2024." },
+    { "id": "3.1", "heading": "Working hours", "text": "The Employee shall work forty (40) hours per week on a rota between 08:00 and 20:00, Monday to Saturday." },
+    { "id": "3.2", "heading": "Overtime", "text": "Overtime requested by the Company shall be paid at one and a half times the hourly rate." },
+    { "id": "4.1", "heading": "Salary", "text": "The Employee's gross monthly salary is AZN 1,100." },
+    { "id": "5.1", "heading": "Annual leave", "text": "The Employee is entitled to twenty-one (21) calendar days of paid annual leave per year." },
+    { "id": "6.1", "heading": "Sick leave", "text": "The Employee is entitled to up to seven (7) days of sick leave per calendar year at full pay." },
+    { "id": "7.1", "heading": "Notice", "text": "Either party may terminate this contract by giving thirty (30) days' written notice." }
+  ]
+}

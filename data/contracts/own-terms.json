@@ -1,0 +1,21 @@
+{
+  "id": "own-terms",
+  "kind": "own_terms",
+  "title": "Standard Terms and Conditions for Suppliers and Partners",
+  "counterparty": "Araz Retail Group LLC",
+  "source": "seed",
+  "fields": { "start": "2025-01-01", "end": null, "autoRenew": false, "noticeDays": null, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "1.1", "heading": "Payment terms", "text": "The Company shall pay each undisputed invoice within thirty (30) days of receipt. The Company does not accept payment terms shorter than thirty (30) days." },
+    { "id": "2.1", "heading": "Limitation of liability", "text": "Each party's total aggregate liability under the agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim. The cap shall apply equally to both parties." },
+    { "id": "2.2", "heading": "Excluded losses", "text": "Neither party shall be liable for indirect or consequential losses, including loss of profit." },
+    { "id": "3.1", "heading": "Termination for convenience", "text": "Either party may terminate the agreement for convenience by giving thirty (30) days' written notice." },
+    { "id": "3.2", "heading": "Renewal", "text": "Any renewal term shall not exceed twelve (12) months, and the notice period required to prevent renewal shall not exceed sixty (60) days." },
+    { "id": "4.1", "heading": "Intellectual property", "text": "All deliverables created for the Company under the agreement, and all intellectual property rights in them, shall be owned by the Company upon payment." },
+    { "id": "5.1", "heading": "Confidentiality", "text": "Each party shall keep the other party's confidential information confidential during the agreement and for three (3) years after its termination." },
+    { "id": "6.1", "heading": "Penalties", "text": "Any penalty for late payment by the Company shall not exceed 0.1% of the overdue amount per day and shall be capped at ten percent (10%) of the overdue amount." },
+    { "id": "7.1", "heading": "Governing law", "text": "The agreement shall be governed by the laws of the Republic of Azerbaijan, and disputes shall be resolved by the courts of Baku." },
+    { "id": "8.1", "heading": "Data protection", "text": "The partner shall notify the Company of any personal data breach within seventy-two (72) hours of becoming aware of it." },
+    { "id": "9.1", "heading": "Subcontracting", "text": "The partner shall not subcontract any part of the services without the Company's prior written consent." }
+  ]
+}

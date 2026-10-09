@@ -1,0 +1,19 @@
+{
+  "id": "partner-brightclean",
+  "kind": "partner",
+  "title": "Facility Cleaning Services Agreement",
+  "counterparty": "BrightClean Facility Services LLC",
+  "source": "seed",
+  "fields": { "start": "2025-11-01", "end": "2026-10-31", "autoRenew": false, "noticeDays": 30, "governingLaw": "Republic of Azerbaijan" },
+  "clauses": [
+    { "id": "1.1", "heading": "Services", "text": "The Contractor shall clean the Company's head office and four retail outlets on each working day." },
+    { "id": "1.2", "heading": "Site supervision", "text": "The Company shall keep one member of its facilities staff on site at each outlet until 23:00 on each working day to supervise the Contractor's cleaning crew." },
+    { "id": "2.1", "heading": "Payment", "text": "The Company shall pay each undisputed invoice within thirty (30) days of receipt." },
+    { "id": "3.1", "heading": "Liability", "text": "Each party's total liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim." },
+    { "id": "4.1", "heading": "Term", "text": "This Agreement runs from 1 November 2025 to 31 October 2026 and does not renew automatically." },
+    { "id": "4.2", "heading": "Termination", "text": "Either party may terminate this Agreement for convenience by giving thirty (30) days' written notice." },
+    { "id": "5.1", "heading": "Confidentiality", "text": "Each party shall keep the other party's confidential information confidential during this Agreement and for two (2) years after its termination." },
+    { "id": "6.1", "heading": "Subcontracting", "text": "The Contractor shall not subcontract the services without the Company's prior written consent." },
+    { "id": "7.1", "heading": "Governing law", "text": "This Agreement is governed by the laws of the Republic of Azerbaijan and disputes shall be resolved by the courts of Baku." }
+  ]
+}
