@@ -5,15 +5,16 @@ import { useUpload } from "@/hooks/use-contracts";
 import { cn, KIND_LABEL } from "@/lib/format";
 import type { Contract, ContractKind } from "@/lib/types";
 import { Button } from "./ui/button";
-import { Card } from "./ui/card";
 import { Icon } from "./ui/icons";
 import { ErrorNote, Spinner } from "./ui/states";
+import { Tabs, type TabItem } from "./ui/tabs";
 
 const KINDS: ContractKind[] = ["partner", "employee", "own_terms"];
-const MODES = [
-  ["file", "Upload a file"],
-  ["text", "Paste text"],
-] as const;
+type Mode = "file" | "text";
+const MODES: TabItem<Mode>[] = [
+  { value: "file", label: "Upload a file" },
+  { value: "text", label: "Paste text" },
+];
 
 /** Sends a PDF, text file or pasted text to ingest, which stores it as clauses with ids. */
 export function UploadPanel({
@@ -27,7 +28,7 @@ export function UploadPanel({
   onUploaded?: (contract: Contract) => void;
 }) {
   const { upload, uploading, error, clearError, lastUpload } = useUpload();
-  const [mode, setMode] = useState<"file" | "text">("file");
+  const [mode, setMode] = useState<Mode>("file");
   const [kind, setKind] = useState<ContractKind>(defaultKind);
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
@@ -59,26 +60,9 @@ export function UploadPanel({
   }
 
   return (
-    <Card className="p-5">
-      <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div role="tablist" aria-label="Upload method" className="inline-flex rounded-md bg-line-soft p-0.5">
-            {MODES.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                role="tab"
-                aria-selected={mode === value}
-                onClick={() => setMode(value)}
-                className={cn(
-                  "rounded px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent",
-                  mode === value ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <Tabs label="Upload method" items={MODES} value={mode} onChange={setMode} />
           {!lockKind && (
             <label className="flex items-center gap-2 text-[13px] text-muted">
               Type
@@ -160,7 +144,6 @@ export function UploadPanel({
               : "Stored as clauses with ids, so every answer can cite them."}
           </span>
         </div>
-      </form>
-    </Card>
+    </form>
   );
 }

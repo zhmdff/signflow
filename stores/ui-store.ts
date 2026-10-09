@@ -12,6 +12,8 @@ type UiState = {
   loadAi: () => Promise<void>;
 };
 
+let statusRequest: Promise<AiStatus> | null = null;
+
 export const useUiStore = create<UiState>()((set, get) => ({
   viewer: null,
   openViewer: (contractId, clauseId = null) => set({ viewer: { contractId, clauseId } }),
@@ -19,11 +21,15 @@ export const useUiStore = create<UiState>()((set, get) => ({
 
   ai: null,
   loadAi: async () => {
-    if (get().ai) return;
+    // Several components ask at once on page load; one request serves them all.
+    if (get().ai || statusRequest) return;
+    statusRequest = api.status();
     try {
-      set({ ai: await api.status() });
+      set({ ai: await statusRequest });
     } catch {
       // The status badge stays hidden; feature calls report their own errors.
+    } finally {
+      statusRequest = null;
     }
   },
 }));

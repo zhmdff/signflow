@@ -65,6 +65,8 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
   const nextKey = useRef(draft.clauses.length);
   const newest = useRef<HTMLInputElement>(null);
   const focusNewest = useRef(false);
+  // One rule is open for editing at a time; the rest stay as a readable list.
+  const [openKey, setOpenKey] = useState<number | null>(null);
 
   const problems = clauseProblems(draft.clauses);
   const dirty = JSON.stringify(payload(draft)) !== saved;
@@ -97,9 +99,11 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
 
   function addClause() {
     focusNewest.current = true;
+    const key = nextKey.current++;
+    setOpenKey(key);
     change({
       ...draft,
-      clauses: [...draft.clauses, { key: nextKey.current++, id: nextClauseId(draft.clauses), heading: "", text: "" }],
+      clauses: [...draft.clauses, { key, id: nextClauseId(draft.clauses), heading: "", text: "" }],
     });
   }
 
@@ -126,7 +130,6 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
   return (
     <>
       <PageHeader
-        eyebrow="Playbook"
         title="Our terms"
         actions={
           <>
@@ -135,7 +138,7 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
                 Discard changes
               </Button>
             )}
-            <Button variant="accent" onClick={save} disabled={!dirty || !valid || saving}>
+            <Button onClick={save} disabled={!dirty || !valid || saving}>
               {saving ? <Spinner /> : <Icon name="check" />}
               {saving ? "Saving" : "Save terms"}
             </Button>
@@ -195,14 +198,36 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
           Rules
         </SectionTitle>
 
-        <ol className="space-y-3">
-          {draft.clauses.map((clause, index) => {
-            const problem = problems[index];
-            const last = index === draft.clauses.length - 1;
-            const name = clause.heading.trim() || `rule ${clause.id.trim() || index + 1}`;
-            return (
-              <li key={clause.key}>
-                <Card className={cn("p-4", problem && "border-major/50")}>
+        <Card className="overflow-hidden">
+          <ol className="divide-y divide-line">
+            {draft.clauses.map((clause, index) => {
+              const problem = problems[index];
+              const last = index === draft.clauses.length - 1;
+              const name = clause.heading.trim() || `rule ${clause.id.trim() || index + 1}`;
+
+              if (clause.key !== openKey) {
+                return (
+                  <li key={clause.key}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenKey(clause.key)}
+                      aria-label={`Edit ${name}`}
+                      className="group grid w-full grid-cols-[3rem_1fr_auto] items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+                    >
+                      <span className="font-mono text-xs leading-6 text-muted">{clause.id || "–"}</span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold">{clause.heading || "Untitled rule"}</span>
+                        <span className="line-clamp-2 text-sm text-muted">{clause.text || "No text yet"}</span>
+                        {problem && <span className="mt-1 block text-xs font-medium text-major">{problem}</span>}
+                      </span>
+                      <Icon name="edit" className="mt-1 size-4 text-muted group-hover:text-accent" />
+                    </button>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={clause.key} className="bg-paper px-5 py-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       ref={last ? newest : undefined}
@@ -210,15 +235,29 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
                       onChange={(e) => patchClause(clause.key, { id: e.target.value })}
                       aria-label="Rule number"
                       placeholder="No."
-                      className={cn(FIELD, "h-9 w-20 shrink-0 px-2 font-mono text-[13px]")}
+                      className={cn(FIELD, "h-9 w-20 shrink-0 bg-surface px-2 font-mono text-[13px]")}
                     />
                     <input
                       value={clause.heading}
                       onChange={(e) => patchClause(clause.key, { heading: e.target.value })}
                       aria-label="Rule heading"
                       placeholder="Heading, e.g. Payment terms"
-                      className={cn(FIELD, "h-9 min-w-0 flex-1 basis-48 text-sm font-semibold")}
+                      className={cn(FIELD, "h-9 min-w-0 flex-1 basis-48 bg-surface text-sm font-semibold")}
                     />
+                  </div>
+                  <textarea
+                    value={clause.text}
+                    onChange={(e) => patchClause(clause.key, { text: e.target.value })}
+                    aria-label="Rule text"
+                    rows={4}
+                    placeholder="The rule itself, as you would want it written into a contract."
+                    className={cn(FIELD, "mt-2 w-full resize-y bg-surface py-2 text-[15px] leading-relaxed")}
+                  />
+                  {problem && <p className="mt-1.5 text-xs font-medium text-major">{problem}</p>}
+                  <div className="mt-3 flex items-center gap-1">
+                    <Button size="sm" variant="secondary" onClick={() => setOpenKey(null)}>
+                      Done
+                    </Button>
                     <div className="ml-auto flex items-center">
                       <IconButton icon="up" label={`Move ${name} up`} disabled={index === 0} onClick={() => move(index, -1)} />
                       <IconButton icon="down" label={`Move ${name} down`} disabled={last} onClick={() => move(index, 1)} />
@@ -230,20 +269,11 @@ function TermsEditor({ terms }: { terms: Contract | null }) {
                       />
                     </div>
                   </div>
-                  <textarea
-                    value={clause.text}
-                    onChange={(e) => patchClause(clause.key, { text: e.target.value })}
-                    aria-label="Rule text"
-                    rows={3}
-                    placeholder="The rule itself, as you would want it written into a contract."
-                    className={cn(FIELD, "mt-2 w-full resize-y py-2 text-[15px] leading-relaxed")}
-                  />
-                  {problem && <p className="mt-1.5 text-xs font-medium text-major">{problem}</p>}
-                </Card>
-              </li>
-            );
-          })}
-        </ol>
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
 
         <button
           type="button"

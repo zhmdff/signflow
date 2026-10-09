@@ -2,21 +2,27 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AddContractDrawer } from "@/components/add-contract-drawer";
 import { AiKeyNotice } from "@/components/ai-key-notice";
 import { PageHeader } from "@/components/page-header";
 import { KindBadge } from "@/components/ui/badge";
 import { Button, buttonClass } from "@/components/ui/button";
-import { Card, SectionTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icons";
 import { EmptyState, ErrorNote, LoadingBlock } from "@/components/ui/states";
-import { UploadPanel } from "@/components/upload-panel";
+import { Tabs } from "@/components/ui/tabs";
 import { useContractActions } from "@/hooks/use-contract-actions";
 import { useContracts } from "@/hooks/use-contracts";
-import { cn, formatDate, KIND_LABEL } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import type { Contract, ContractKind } from "@/lib/types";
 
 type Filter = "all" | ContractKind;
-const FILTERS: Filter[] = ["all", "partner", "employee", "own_terms"];
+const FILTER_LABEL: Record<Filter, string> = {
+  all: "All",
+  partner: "Partner",
+  employee: "Employee",
+  own_terms: "Our terms",
+};
 
 function ContractRow({ contract, onRemove }: { contract: Contract; onRemove: (id: string) => void }) {
   const { view, ask, compare } = useContractActions();
@@ -29,18 +35,18 @@ function ContractRow({ contract, onRemove }: { contract: Contract; onRemove: (id
           <button
             type="button"
             onClick={() => view(contract.id)}
-            className="truncate text-left heading text-lg leading-tight hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+            className="truncate text-left font-semibold hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
           >
             {contract.counterparty}
           </button>
           <KindBadge kind={contract.kind} />
         </div>
         <div className="truncate text-sm text-muted">{contract.title}</div>
-        <div className="mt-1 flex flex-wrap gap-x-4 font-mono text-[11px] text-muted">
+        <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-muted">
           <span>{contract.clauses.length} clauses</span>
-          <span>{end ? `ends ${formatDate(end)}` : "open-ended"}</span>
+          <span>{end ? `Ends ${formatDate(end)}` : "Open-ended"}</span>
           {noticeDays && <span>{noticeDays} days notice</span>}
-          {autoRenew && <span className="text-major">auto-renews</span>}
+          {autoRenew && <span className="font-medium text-major">Auto-renews</span>}
         </div>
       </div>
 
@@ -87,6 +93,7 @@ export function ContractsView() {
   const { view } = useContractActions();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const count = (f: Filter) => (f === "all" ? contracts.length : contracts.filter((c) => c.kind === f).length);
   const needle = query.trim().toLowerCase();
@@ -96,86 +103,77 @@ export function ContractsView() {
       (!needle || `${c.counterparty} ${c.title}`.toLowerCase().includes(needle)),
   );
 
+  const addButton = (
+    <Button onClick={() => setAdding(true)}>
+      <Icon name="plus" />
+      Add contract
+    </Button>
+  );
+
   return (
     <>
-      <PageHeader eyebrow="Library" title="Contracts">
-        Everything SignFlow has read. Add a contract here, then read it, ask about it or compare it with your terms.
+      <PageHeader title="Contracts" actions={addButton}>
+        Everything SignFlow has read. Open one to read it, ask about it or compare it with your terms.
       </PageHeader>
 
       <AiKeyNotice />
 
-      <section className="mb-10">
-        <SectionTitle>Add a contract</SectionTitle>
-        <UploadPanel onUploaded={(c) => view(c.id)} />
-      </section>
+      {status === "error" && contracts.length === 0 ? (
+        <ErrorNote
+          action={
+            <button type="button" onClick={reload} className="font-medium underline">
+              Retry
+            </button>
+          }
+        >
+          {error}
+        </ErrorNote>
+      ) : loading ? (
+        <LoadingBlock title="Loading contracts" />
+      ) : contracts.length === 0 ? (
+        <EmptyState title="No contracts yet" action={addButton}>
+          Add your first contract to get started.
+        </EmptyState>
+      ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <Tabs
+              label="Filter by type"
+              value={filter}
+              onChange={setFilter}
+              items={(Object.keys(FILTER_LABEL) as Filter[]).map((f) => ({ value: f, label: FILTER_LABEL[f], count: count(f) }))}
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search contracts"
+              placeholder="Search by name or title"
+              className="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent sm:w-64"
+            />
+          </div>
 
-      <section>
-        <SectionTitle>Your contracts</SectionTitle>
-
-        {status === "error" && contracts.length === 0 ? (
-          <ErrorNote
-            action={
-              <button type="button" onClick={reload} className="font-medium underline">
-                Retry
-              </button>
-            }
-          >
-            {error}
-          </ErrorNote>
-        ) : loading ? (
-          <LoadingBlock title="Loading contracts" />
-        ) : contracts.length === 0 ? (
-          <EmptyState title="No contracts yet">Upload your own terms first, then a partner contract.</EmptyState>
-        ) : (
-          <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Filter by type" className="inline-flex flex-wrap rounded-md bg-line-soft p-0.5">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    role="tab"
-                    aria-selected={filter === f}
-                    onClick={() => setFilter(f)}
-                    className={cn(
-                      "rounded px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent",
-                      filter === f ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
-                    )}
-                  >
-                    {f === "all" ? "All" : KIND_LABEL[f]} <span className="font-mono text-[11px] text-muted">{count(f)}</span>
-                  </button>
-                ))}
-              </div>
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Search contracts"
-                placeholder="Search by name or title"
-                className="h-9 w-full rounded-md border border-line bg-surface px-3 text-sm placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent sm:w-64"
-              />
+          {error && (
+            <div className="mb-3">
+              <ErrorNote>{error}</ErrorNote>
             </div>
+          )}
 
-            {error && (
-              <div className="mb-3">
-                <ErrorNote>{error}</ErrorNote>
-              </div>
-            )}
+          {shown.length === 0 ? (
+            <EmptyState title="Nothing matches">Try a different filter or search term.</EmptyState>
+          ) : (
+            <Card>
+              <ul className="divide-y divide-line">
+                {shown.map((c) => (
+                  <ContractRow key={c.id} contract={c} onRemove={remove} />
+                ))}
+              </ul>
+            </Card>
+          )}
+        </>
+      )}
 
-            {shown.length === 0 ? (
-              <EmptyState title="Nothing matches">Try a different filter or search term.</EmptyState>
-            ) : (
-              <Card>
-                <ul className="divide-y divide-line">
-                  {shown.map((c) => (
-                    <ContractRow key={c.id} contract={c} onRemove={remove} />
-                  ))}
-                </ul>
-              </Card>
-            )}
-          </>
-        )}
-      </section>
+      <AddContractDrawer open={adding} onClose={() => setAdding(false)} onUploaded={(c) => view(c.id)} />
     </>
   );
 }

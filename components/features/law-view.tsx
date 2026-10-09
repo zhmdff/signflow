@@ -1,21 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { AiKeyNotice } from "@/components/ai-key-notice";
 import { QuoteBlock, SuggestedWording } from "@/components/citation";
 import { PageHeader } from "@/components/page-header";
 import { ReviewNotice } from "@/components/review-notice";
 import { Badge, ConfidenceLabel, KindBadge, SeverityBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, SectionTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Collapsible } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icons";
 import { EmptyState, ErrorNote, LoadingBlock, Spinner } from "@/components/ui/states";
+import { Tabs } from "@/components/ui/tabs";
 import { useLawScan, type ImpactGroup } from "@/hooks/use-law-scan";
 import { cn, formatDate } from "@/lib/format";
 import { SAMPLE_LAWS } from "@/lib/samples";
-import type { LawRule } from "@/lib/types";
-import { useUiStore } from "@/stores/ui-store";
+import type { LawImpact, LawRule } from "@/lib/types";
 
-function RuleCard({ rule }: { rule: LawRule }) {
+function RuleRow({ rule }: { rule: LawRule }) {
   return (
     <li className="grid grid-cols-[2.5rem_1fr] gap-2 px-5 py-4">
       <span className="font-mono text-xs leading-6 text-accent">{rule.id}</span>
@@ -35,10 +37,15 @@ function RuleCard({ rule }: { rule: LawRule }) {
             <dd>{rule.penalty ?? "Not stated"}</dd>
           </div>
         </dl>
-        <p className={cn("mt-2 border-l-2 pl-3 text-sm leading-relaxed text-ink-soft", rule.quoteVerified ? "border-ink/25" : "border-dashed border-major")}>
+        <p
+          className={cn(
+            "mt-3 border-l-2 pl-3 text-sm leading-relaxed text-ink-soft",
+            rule.quoteVerified ? "border-ink/25" : "border-dashed border-major",
+          )}
+        >
           “{rule.quote}”
           {!rule.quoteVerified && (
-            <span className="mt-0.5 block font-sans text-[11px] font-medium text-major">
+            <span className="mt-0.5 block text-[11px] font-medium text-major">
               Not found in the law text. Check before relying on it.
             </span>
           )}
@@ -48,37 +55,63 @@ function RuleCard({ rule }: { rule: LawRule }) {
   );
 }
 
-function ImpactGroupCard({ group, rules }: { group: ImpactGroup; rules: Map<string, LawRule> }) {
-  const openViewer = useUiStore((s) => s.openViewer);
-  const { contract, impacts } = group;
+/** One clause can break several rules. It is shown once, with every rule it breaks. */
+function byClause(impacts: LawImpact[]): { impact: LawImpact; ruleIds: string[] }[] {
+  const merged = new Map<string, { impact: LawImpact; ruleIds: string[] }>();
+  for (const impact of impacts) {
+    const entry = merged.get(impact.quote.clauseId);
+    if (entry) {
+      if (!entry.ruleIds.includes(impact.ruleId)) entry.ruleIds.push(impact.ruleId);
+    } else {
+      // Impacts arrive worst first, so the first one seen for a clause carries its highest risk.
+      merged.set(impact.quote.clauseId, { impact, ruleIds: [impact.ruleId] });
+    }
+  }
+  return [...merged.values()];
+}
+
+function AffectedContract({
+  group,
+  rules,
+  defaultOpen,
+}: {
+  group: ImpactGroup;
+  rules: Map<string, LawRule>;
+  defaultOpen: boolean;
+}) {
+  const { contract } = group;
+  const clauses = byClause(group.impacts);
+
   return (
-    <Card className="animate-rise-in overflow-hidden">
-      <header className="flex flex-wrap items-center gap-2 border-b border-line bg-paper/60 px-5 py-3">
-        <button
-          type="button"
-          onClick={() => openViewer(contract.id)}
-          className="heading text-lg leading-none hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          {contract.counterparty}
-        </button>
-        <KindBadge kind={contract.kind} />
-        <span className="ml-auto text-xs text-muted">
-          {impacts.length} conflicting clause{impacts.length === 1 ? "" : "s"}
-        </span>
-      </header>
-      <ul className="divide-y divide-line">
-        {impacts.map((impact, i) => {
-          const rule = rules.get(impact.ruleId);
+    <Collapsible
+      defaultOpen={defaultOpen}
+      summary={
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <SeverityBadge severity={group.impacts[0].risk} />
+          <span className="font-semibold">{contract.counterparty}</span>
+          <KindBadge kind={contract.kind} />
+          <span className="text-sm text-muted">
+            {clauses.length} clause{clauses.length === 1 ? "" : "s"} to amend
+          </span>
+        </div>
+      }
+    >
+      <ul className="-my-5 divide-y divide-line">
+        {clauses.map(({ impact, ruleIds }) => {
+          const deadline = ruleIds.map((id) => rules.get(id)?.effectiveDate).find(Boolean);
           return (
-            <li key={i} className="space-y-3 px-5 py-4">
+            <li key={impact.quote.clauseId} className="space-y-3 py-5">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <SeverityBadge severity={impact.risk} />
-                <Badge tone="accent">Rule {impact.ruleId}</Badge>
+                {ruleIds.map((id) => (
+                  <Badge key={id} tone="accent">
+                    Rule {id}
+                  </Badge>
+                ))}
                 <ConfidenceLabel confidence={impact.confidence} />
-                {rule?.effectiveDate && (
+                {deadline && (
                   <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium">
                     <Icon name="clock" className="size-3.5" />
-                    Amend by {formatDate(rule.effectiveDate)}
+                    Amend by {formatDate(deadline)}
                   </span>
                 )}
               </div>
@@ -89,84 +122,68 @@ function ImpactGroupCard({ group, rules }: { group: ImpactGroup; rules: Map<stri
           );
         })}
       </ul>
-    </Card>
+    </Collapsible>
   );
 }
+
+type View = "scan" | "history";
+type ResultTab = "affected" | "rules";
 
 export function LawView() {
   const { lawText, setLawText, status, result, error, groups, scannedCount, scan, history, open, removeScan } =
     useLawScan();
+  const [view, setView] = useState<View>("scan");
+  const [tab, setTab] = useState<ResultTab>("affected");
   const running = status === "loading";
   const rules = new Map(result?.rules.map((r) => [r.id, r]));
 
   return (
     <>
-      <PageHeader eyebrow="Check 02" title="Law scanner">
-        Paste the text of a new law or amendment. SignFlow extracts its rules, then checks every stored contract
-        clause against them.
+      <PageHeader title="Law scanner">
+        Paste a new law or amendment. SignFlow works out its rules, then checks every contract against them.
       </PageHeader>
 
       <AiKeyNotice />
 
-      <Card className="mb-8 p-5">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold tracking-[0.14em] text-muted uppercase">Try a sample</span>
-          {SAMPLE_LAWS.map((law) => (
-            <button
-              key={law.id}
-              type="button"
-              disabled={running}
-              onClick={() => setLawText(law.text)}
-              className="rounded-full border border-line bg-paper px-3 py-1 text-[13px] text-ink-soft transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
-            >
-              {law.title}
-            </button>
-          ))}
-        </div>
-        <textarea
-          value={lawText}
-          onChange={(e) => setLawText(e.target.value)}
-          rows={9}
-          disabled={running}
-          aria-label="Law text"
-          placeholder="Paste the law text here."
-          className="w-full resize-y rounded-md border border-line bg-paper px-3 py-2.5 font-mono text-[13px] leading-relaxed placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60"
-        />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <Button variant="accent" onClick={() => scan({ force: result !== null })} disabled={running || lawText.trim().length < 40}>
-            {running ? <Spinner /> : <Icon name={result ? "refresh" : "law"} />}
-            {running ? "Scanning" : result ? "Scan again" : `Scan ${scannedCount} contracts`}
-          </Button>
-          <span className="text-xs text-muted">Your own terms template is not scanned, only signed contracts.</span>
-        </div>
-      </Card>
+      <Tabs
+        label="Law scanner views"
+        className="mb-6"
+        value={view}
+        onChange={setView}
+        items={[
+          { value: "scan", label: "Scan" },
+          { value: "history", label: "Previous scans", count: history.length },
+        ]}
+      />
 
-      {history.length > 0 && (
-        <section className="mb-8">
-          <SectionTitle>Previous scans</SectionTitle>
+      {view === "history" &&
+        (history.length === 0 ? (
+          <EmptyState icon="clock" title="No scans yet">
+            Every scan is saved here so you can reopen it without running it again.
+          </EmptyState>
+        ) : (
           <Card>
             <ul className="divide-y divide-line">
-              {history.map((scan) => (
-                <li key={scan.id} className="flex items-center gap-3 px-5 py-2.5">
+              {history.map((item) => (
+                <li key={item.id} className="flex items-center gap-3 px-5 py-3">
                   <button
                     type="button"
-                    disabled={running}
-                    onClick={() => open(scan.id)}
-                    className={cn(
-                      "min-w-0 flex-1 truncate text-left text-sm font-medium hover:text-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50",
-                      result?.id === scan.id && "text-accent",
-                    )}
+                    onClick={() => {
+                      void open(item.id);
+                      setView("scan");
+                      setTab("affected");
+                    }}
+                    className="min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-accent"
                   >
-                    {scan.title}
+                    <span className="block truncate font-medium hover:text-accent">{item.title}</span>
+                    <span className="block text-xs text-muted">
+                      {formatDate(item.at.slice(0, 10))} · {item.rules} rules · {item.impacts} clauses to amend
+                    </span>
                   </button>
-                  <span className="hidden shrink-0 font-mono text-[11px] text-muted sm:block">
-                    {scan.rules} rules, {scan.impacts} to amend
-                  </span>
-                  <span className="shrink-0 text-xs text-muted">{formatDate(scan.at.slice(0, 10))}</span>
                   <button
                     type="button"
-                    onClick={() => removeScan(scan.id)}
-                    aria-label={`Delete scan: ${scan.title}`}
+                    onClick={() => removeScan(item.id)}
+                    aria-label={`Delete scan: ${item.title}`}
                     className="rounded-md p-1.5 text-muted hover:bg-critical-soft hover:text-critical focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <Icon name="trash" />
@@ -175,77 +192,128 @@ export function LawView() {
               ))}
             </ul>
           </Card>
-        </section>
-      )}
+        ))}
 
-      {error && (
-        <div className="mb-6">
-          <ErrorNote>{error}</ErrorNote>
-        </div>
-      )}
-
-      {running && (
-        <LoadingBlock
-          title="Reading the law, then every contract"
-          detail="Step 1 extracts the rules. Step 2 checks each clause against them and verifies the quotes. Usually 15 to 40 seconds."
-        />
-      )}
-
-      {result && !running && (
-        <div className="space-y-8">
-          <Card className="p-5">
-            <h2 className="heading text-2xl leading-tight">{result.lawTitle}</h2>
-            <p className="mt-1 text-sm text-muted">
-              {result.rules.length} rule{result.rules.length === 1 ? "" : "s"} extracted. {groups.length} of{" "}
-              {scannedCount} contracts affected, {result.impacts.length} clause
-              {result.impacts.length === 1 ? "" : "s"} to amend.
-            </p>
-            <div className="mt-4">
-              <ReviewNotice stats={result.stats} usage={result.usage} cached={result.cached} />
-            </div>
-          </Card>
-
-          <section>
-            <SectionTitle>Rules found in the law</SectionTitle>
-            {result.rules.length === 0 ? (
-              <EmptyState icon="law" title="No rules found">
-                This text does not seem to create obligations. Check that you pasted the operative articles.
-              </EmptyState>
-            ) : (
-              <Card>
-                <ul className="divide-y divide-line">
-                  {result.rules.map((rule) => (
-                    <RuleCard key={rule.id} rule={rule} />
-                  ))}
-                </ul>
-              </Card>
-            )}
-          </section>
-
-          {result.rules.length > 0 && (
-            <section>
-              <SectionTitle>Affected contracts, highest risk first</SectionTitle>
-              {groups.length === 0 ? (
-                <EmptyState icon="check" title="No conflicts found">
-                  None of the {scannedCount} contracts has a clause that breaches these rules.
-                </EmptyState>
-              ) : (
-                <div className="space-y-3">
-                  {groups.map((group) => (
-                    <ImpactGroupCard key={group.contract.id} group={group} rules={rules} />
-                  ))}
+      {view === "scan" && (
+        <>
+          {result && !running ? (
+            // Once there is a result, the input steps aside for it.
+            <Card className="mb-6 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="heading text-xl leading-tight">{result.lawTitle}</h2>
+                  <p className="mt-1 text-sm text-muted">
+                    {result.rules.length} rule{result.rules.length === 1 ? "" : "s"} found. {groups.length} of{" "}
+                    {scannedCount} contracts affected.
+                  </p>
                 </div>
-              )}
-            </section>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => scan({ force: true })}>
+                    <Icon name="refresh" />
+                    Scan again
+                  </Button>
+                  <Button variant="secondary" onClick={() => setLawText("")}>
+                    <Icon name="plus" />
+                    New scan
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-4">
+                <ReviewNotice stats={result.stats} usage={result.usage} cached={result.cached} />
+              </div>
+            </Card>
+          ) : (
+            <Card className="mb-6 p-5">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted">Try a sample:</span>
+                {SAMPLE_LAWS.map((law) => (
+                  <button
+                    key={law.id}
+                    type="button"
+                    disabled={running}
+                    onClick={() => setLawText(law.text)}
+                    className="rounded-full border border-line bg-paper px-3 py-1 text-[13px] text-ink-soft transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50"
+                  >
+                    {law.title}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={lawText}
+                onChange={(e) => setLawText(e.target.value)}
+                rows={9}
+                disabled={running}
+                aria-label="Law text"
+                placeholder="Paste the law text here."
+                className="w-full resize-y rounded-lg border border-line bg-paper px-3 py-2.5 font-mono text-[13px] leading-relaxed placeholder:text-muted focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Button onClick={() => scan()} disabled={running || lawText.trim().length < 40}>
+                  {running ? <Spinner /> : <Icon name="law" />}
+                  {running ? "Scanning" : `Scan ${scannedCount} contracts`}
+                </Button>
+                <span className="text-xs text-muted">Your own terms are not scanned, only signed contracts.</span>
+              </div>
+            </Card>
           )}
-        </div>
-      )}
 
-      {status === "idle" && !result && (
-        <EmptyState icon="law" title="Nothing scanned yet">
-          Choose a sample above or paste a law. The “no work after 9pm” sample hits both employee and partner
-          contracts.
-        </EmptyState>
+          {error && (
+            <div className="mb-6">
+              <ErrorNote>{error}</ErrorNote>
+            </div>
+          )}
+
+          {running && (
+            <LoadingBlock
+              title="Reading the law, then every contract"
+              detail="Step 1 works out the rules. Step 2 checks each contract and verifies the quotes. Usually 15 to 40 seconds."
+            />
+          )}
+
+          {result && !running && (
+            <>
+              <Tabs
+                label="Result sections"
+                variant="underline"
+                className="mb-5"
+                value={tab}
+                onChange={setTab}
+                items={[
+                  { value: "affected", label: "Affected contracts", count: groups.length },
+                  { value: "rules", label: "Rules in the law", count: result.rules.length },
+                ]}
+              />
+
+              {tab === "affected" &&
+                (groups.length === 0 ? (
+                  <EmptyState icon="check" title="No conflicts found">
+                    None of the {scannedCount} contracts has a clause that breaks these rules.
+                  </EmptyState>
+                ) : (
+                  <div className="space-y-3">
+                    {groups.map((group, i) => (
+                      <AffectedContract key={group.contract.id} group={group} rules={rules} defaultOpen={i === 0} />
+                    ))}
+                  </div>
+                ))}
+
+              {tab === "rules" &&
+                (result.rules.length === 0 ? (
+                  <EmptyState icon="law" title="No rules found">
+                    This text does not seem to create obligations. Check that you pasted the operative articles.
+                  </EmptyState>
+                ) : (
+                  <Card>
+                    <ul className="divide-y divide-line">
+                      {result.rules.map((rule) => (
+                        <RuleRow key={rule.id} rule={rule} />
+                      ))}
+                    </ul>
+                  </Card>
+                ))}
+            </>
+          )}
+        </>
       )}
     </>
   );

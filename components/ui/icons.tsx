@@ -20,6 +20,8 @@ const PATHS = {
   plus: "M12 5v14M5 12h14",
   up: "M12 19V5M6 11l6-6 6 6",
   down: "M12 5v14M6 13l6 6 6-6",
+  chevron: "M6 9l6 6 6-6",
+  chart: "M4 20V11M10 20V4M16 20v-6M2 20h20",
   send: "M4 12l16-8-6 16-3-7-7-1z",
 } as const;
 

@@ -18,7 +18,7 @@ export function Spinner({ className }: { className?: string }) {
 /** Shown while an AI call runs: says what is happening, since calls take several seconds. */
 export function LoadingBlock({ title, detail }: { title: string; detail?: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-dashed border-line px-5 py-6">
+    <div className="flex items-start gap-3 rounded-xl border border-dashed border-line bg-surface px-5 py-6">
       <Spinner className="mt-0.5 text-accent" />
       <div>
         <div className="text-sm font-medium">{title}</div>
@@ -40,7 +40,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center">
+    <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center">
       <Icon name={icon} className="mx-auto size-6 text-muted" />
       <div className="mt-3 heading text-lg">{title}</div>
       {children && <p className="mx-auto mt-1 max-w-md text-sm text-muted">{children}</p>}

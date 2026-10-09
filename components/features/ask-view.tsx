@@ -105,7 +105,6 @@ export function AskView() {
   return (
     <>
       <PageHeader
-        eyebrow="Check 03"
         title="Ask a contract"
         actions={
           messages.length > 0 && (

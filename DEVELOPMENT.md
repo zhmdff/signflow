@@ -28,6 +28,7 @@ Open http://localhost:3000. Without a key you can browse the contracts and the r
 | `/dashboard/law` | Law text against every stored contract |
 | `/dashboard/ask` | Questions answered with clause citations |
 | `/dashboard/reminders` | Notice deadlines and renewals (no AI) |
+| `/dashboard/usage` | Tokens used, calls, cache hits and tokens saved per step |
 
 ## Where things are
 
@@ -35,7 +36,8 @@ Open http://localhost:3000. Without a key you can browse the contracts and the r
 - `data/contracts/` holds the sample contracts that seed a new database. `data/samples/` has a long contract to upload.
 - `lib/server/` is the server side: `db.ts` and `store.ts` (database and cache), `ai.ts` (`callModel`, which tries `gemini.ts` then `groq.ts`), `split.ts` (splits numbered contracts in code), `search.ts` (picks the clauses a question needs), `usage.ts`, `schemas.ts`, `ingest.ts`, `compare.ts`, `law-scan.ts`, `ask.ts`, and `verify.ts` (the quote verifier).
 - `app/api/` has one route per call. `lib/api.ts` is the typed client for them.
-- `stores/` holds the zustand stores, `hooks/` the hooks pages use, `components/` the shared UI.
+- `stores/` holds the zustand stores and `hooks/` the hooks pages use.
+- `components/ui/` holds the shared building blocks (buttons, cards, tabs, collapsible sections, the slide-over drawer). `components/features/` has one view per page.
 - `lib/reminders.ts` works out notice deadlines.
 
 ## How it saves tokens

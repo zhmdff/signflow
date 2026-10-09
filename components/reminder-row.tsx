@@ -43,11 +43,11 @@ export function ReminderRow({ reminder, timeline = false }: { reminder: Reminder
   const style = STATUS_STYLE[status];
 
   return (
-    <li className="px-5 py-4">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
-        <div className="min-w-0 flex-1">
+    <li className="grid grid-cols-[auto_1fr] gap-x-3 px-5 py-4">
+      <span className={cn("mt-1.5 size-2.5 rounded-full", style.dot)} />
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <div className="min-w-0 flex-1 basis-56">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("size-2.5 shrink-0 rounded-full", style.dot)} />
             <button
               type="button"
               onClick={() => openViewer(contract.id)}
@@ -63,21 +63,28 @@ export function ReminderRow({ reminder, timeline = false }: { reminder: Reminder
               </Badge>
             )}
           </div>
-          <div className="mt-0.5 truncate pl-[18px] text-sm text-muted">{contract.title}</div>
-          <div className={cn("mt-1.5 pl-[18px] text-sm font-medium", style.text)}>{message}</div>
+          {timeline && <div className="mt-0.5 truncate text-sm text-muted">{contract.title}</div>}
+          <div className={cn("mt-1 text-sm font-medium", style.text)}>{message}</div>
         </div>
-        <dl className="grid shrink-0 grid-cols-2 gap-x-6 pl-[18px] text-xs sm:pl-0 sm:text-right">
-          <div>
-            <dt className="text-muted">Notice by</dt>
-            <dd className="font-mono text-[13px]">{noticeDeadline ? formatDate(noticeDeadline) : "n/a"}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Ends</dt>
-            <dd className="font-mono text-[13px]">{formatDate(end)}</dd>
-          </div>
-        </dl>
+        {/* The short form, used in summaries, leaves the dates to the message. */}
+        {timeline && (
+          <dl className="grid shrink-0 grid-cols-2 gap-x-6 text-xs sm:text-right">
+            <div>
+              <dt className="text-muted">Notice by</dt>
+              <dd className="font-mono text-[13px]">{noticeDeadline ? formatDate(noticeDeadline) : "n/a"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Ends</dt>
+              <dd className="font-mono text-[13px]">{formatDate(end)}</dd>
+            </div>
+          </dl>
+        )}
       </div>
-      {timeline && status !== "expired" && <Timeline reminder={reminder} />}
+      {timeline && status !== "expired" && (
+        <div className="col-start-2">
+          <Timeline reminder={reminder} />
+        </div>
+      )}
     </li>
   );
 }

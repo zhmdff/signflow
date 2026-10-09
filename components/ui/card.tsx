@@ -2,14 +2,14 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/format";
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-lg border border-line bg-surface", className)} {...props} />;
+  return <div className={cn("rounded-xl border border-line bg-surface shadow-xs", className)} {...props} />;
 }
 
 /** Small-caps label that opens a section, with an optional control on the right. */
 export function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-4">
-      <h2 className="text-[11px] font-semibold tracking-[0.14em] text-muted uppercase">{children}</h2>
+      <h2 className="heading text-base text-ink">{children}</h2>
       {aside}
     </div>
   );

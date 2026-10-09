@@ -1,22 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ReminderRow, STATUS_STYLE } from "@/components/reminder-row";
-import { Card, SectionTitle, Stat } from "@/components/ui/card";
+import { Card, SectionTitle } from "@/components/ui/card";
 import { EmptyState, ErrorNote, LoadingBlock } from "@/components/ui/states";
+import { Tabs } from "@/components/ui/tabs";
 import { useReminders } from "@/hooks/use-reminders";
-import { cn, contractLabel, formatDate } from "@/lib/format";
+import { contractLabel, formatDate } from "@/lib/format";
 import { useUiStore } from "@/stores/ui-store";
+
+type Filter = "all" | "red" | "amber" | "green";
 
 export function RemindersView() {
   const { today, reminders, openEnded, counts, loading, failed, error } = useReminders();
   const openViewer = useUiStore((s) => s.openViewer);
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const shown = filter === "all" ? reminders : reminders.filter((r) => r.status === filter);
 
   return (
     <>
-      <PageHeader eyebrow="Check 04" title="Expiry and renewal">
-        The date that matters is the notice deadline, not the end date. It is the end date minus the notice period,
-        worked out from each contract with no AI involved.
+      <PageHeader title="Expiry and renewal">
+        The date that matters is the last day to give notice, not the day the contract ends. Most urgent first.
       </PageHeader>
 
       {failed ? (
@@ -25,52 +31,49 @@ export function RemindersView() {
         <LoadingBlock title="Working out deadlines" />
       ) : (
         <>
-          <Card className="mb-8 grid grid-cols-3 gap-px overflow-hidden bg-line">
-            {(["red", "amber", "green"] as const).map((s) => (
-              <Stat
-                key={s}
-                label={STATUS_STYLE[s].label}
-                value={<span className={cn(counts[s] > 0 && STATUS_STYLE[s].text)}>{counts[s]}</span>}
-                hint={s === "red" ? "30 days or less, or missed" : s === "amber" ? "31 to 90 days" : "More than 90 days"}
-              />
-            ))}
-          </Card>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <Tabs
+              label="Filter by urgency"
+              value={filter}
+              onChange={setFilter}
+              items={[
+                { value: "all", label: "All", count: reminders.length },
+                { value: "red", label: STATUS_STYLE.red.label, count: counts.red },
+                { value: "amber", label: STATUS_STYLE.amber.label, count: counts.amber },
+                { value: "green", label: STATUS_STYLE.green.label, count: counts.green },
+              ]}
+            />
+            <span className="flex items-center gap-4 text-xs text-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2 rotate-45 bg-ink-soft" /> Notice deadline
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-0.5 bg-ink" /> End date
+              </span>
+            </span>
+          </div>
 
-          <section className="mb-10">
-            <SectionTitle
-              aside={
-                <span className="flex items-center gap-4 text-[11px] text-muted">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rotate-45 bg-ink-soft" /> Notice deadline
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-3 w-0.5 bg-ink" /> End date
-                  </span>
-                </span>
-              }
-            >
-              Most urgent first
-            </SectionTitle>
-            {reminders.length === 0 ? (
-              <EmptyState icon="clock" title="No dated contracts">
-                None of the stored contracts has an end date.
-              </EmptyState>
-            ) : (
-              <Card>
-                <div className="flex justify-between border-b border-line px-5 py-2 font-mono text-[11px] text-muted">
-                  <span>Today, {formatDate(today)}</span>
-                  <span>+12 months</span>
-                </div>
-                <ul className="divide-y divide-line">
-                  {reminders.map((r) => (
-                    <ReminderRow key={r.contract.id} reminder={r} timeline />
-                  ))}
-                </ul>
-              </Card>
-            )}
-          </section>
+          {shown.length === 0 ? (
+            <EmptyState icon="clock" title={reminders.length === 0 ? "No dated contracts" : "Nothing here"}>
+              {reminders.length === 0
+                ? "None of the stored contracts has an end date."
+                : "No contracts have this status right now."}
+            </EmptyState>
+          ) : (
+            <Card className="mb-10">
+              <div className="flex justify-between border-b border-line px-5 py-2 text-xs text-muted">
+                <span>Today, {formatDate(today)}</span>
+                <span>12 months from now</span>
+              </div>
+              <ul className="divide-y divide-line">
+                {shown.map((r) => (
+                  <ReminderRow key={r.contract.id} reminder={r} timeline />
+                ))}
+              </ul>
+            </Card>
+          )}
 
-          {openEnded.length > 0 && (
+          {filter === "all" && openEnded.length > 0 && (
             <section>
               <SectionTitle>Open-ended, no deadline to track</SectionTitle>
               <Card>
