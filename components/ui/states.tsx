@@ -42,7 +42,7 @@ export function EmptyState({
   return (
     <div className="rounded-lg border border-dashed border-line px-6 py-10 text-center">
       <Icon name={icon} className="mx-auto size-6 text-muted" />
-      <div className="mt-3 font-display text-2xl">{title}</div>
+      <div className="mt-3 heading text-lg">{title}</div>
       {children && <p className="mx-auto mt-1 max-w-md text-sm text-muted">{children}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>

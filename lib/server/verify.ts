@@ -42,7 +42,8 @@ export function verifyQuote(
   raw: { clauseId: string; text: string } | null | undefined,
 ): Quote | null {
   if (!raw || !raw.text?.trim()) return null;
-  const clauseId = raw.clauseId?.trim() ?? "";
+  // Models sometimes copy the id with the brackets it is shown in: "[3.2]".
+  const clauseId = (raw.clauseId ?? "").trim().replace(/^\[|\]$/g, "");
   const cited = contract.clauses.find((c) => c.id === clauseId);
   if (cited && appearsIn(cited.text, raw.text)) {
     return { clauseId, text: raw.text, status: "exact" };

@@ -53,7 +53,7 @@ function FindingCard({ finding, terms, partner }: { finding: Finding; terms: Con
   return (
     <Card className={cn("animate-rise-in border-l-4 p-5", EDGE[finding.severity])}>
       <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h3 className="font-display text-2xl leading-none">{TOPIC_LABEL[finding.topic]}</h3>
+        <h3 className="heading text-lg leading-none">{TOPIC_LABEL[finding.topic]}</h3>
         <SeverityBadge severity={finding.severity} />
         <ConfidenceLabel confidence={finding.confidence} />
       </div>
@@ -73,7 +73,7 @@ function MissingCard({ missing, terms }: { missing: MissingClause; terms: Contra
   return (
     <Card className={cn("animate-rise-in border-l-4 border-dashed p-5", EDGE[missing.severity])}>
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h3 className="font-display text-2xl leading-none">{TOPIC_LABEL[missing.topic]}</h3>
+        <h3 className="heading text-lg leading-none">{TOPIC_LABEL[missing.topic]}</h3>
         <SeverityBadge severity={missing.severity} />
         <span className="text-xs text-muted">Not in their contract</span>
       </div>
@@ -93,18 +93,18 @@ function Results({ result, terms, partner }: { result: CompareResult; terms: Con
   return (
     <div className="space-y-8">
       <Card className="p-5">
-        <p className="font-display text-2xl leading-snug">{result.summary}</p>
+        <p className="text-lg leading-snug font-medium">{result.summary}</p>
         <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 border-t border-line pt-4">
           {(["critical", "major", "minor"] as const).map((s) => (
             <div key={s} className="flex items-baseline gap-2">
-              <dd className={cn("font-display text-3xl leading-none tabular-nums", count(s) > 0 && COUNT_TEXT[s])}>
+              <dd className={cn("heading text-2xl leading-none tabular-nums", count(s) > 0 && COUNT_TEXT[s])}>
                 {count(s)}
               </dd>
               <dt className="text-sm text-muted">{s}</dt>
             </div>
           ))}
           <div className="flex items-baseline gap-2">
-            <dd className="font-display text-3xl leading-none tabular-nums">{result.missingClauses.length}</dd>
+            <dd className="heading text-2xl leading-none tabular-nums">{result.missingClauses.length}</dd>
             <dt className="text-sm text-muted">missing</dt>
           </div>
         </dl>

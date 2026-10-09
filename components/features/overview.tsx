@@ -12,12 +12,22 @@ import { ErrorNote } from "@/components/ui/states";
 import { useContractActions } from "@/hooks/use-contract-actions";
 import { useContracts } from "@/hooks/use-contracts";
 import { useReminders } from "@/hooks/use-reminders";
+import { useUsage } from "@/hooks/use-usage";
 import { FEATURES } from "@/lib/nav";
+
+const USAGE_LABEL: Record<string, string> = {
+  ingest: "Upload a contract",
+  compare: "Compare with our terms",
+  law_rules: "Law scan: read the law",
+  law_impacts: "Law scan: check contracts",
+  ask: "Ask a question",
+};
 
 export function Overview() {
   const { contracts, partners, employees, ownTerms, loading, status, error } = useContracts();
   const { reminders, counts } = useReminders();
   const { view } = useContractActions();
+  const usage = useUsage();
 
   const clauseCount = contracts.reduce((n, c) => n + c.clauses.length, 0);
   const urgent = reminders.filter((r) => r.status === "red" || r.status === "amber").slice(0, 3);
@@ -71,7 +81,7 @@ export function Overview() {
                 <span className="font-mono text-xs text-muted">0{i + 1}</span>
                 <Icon name="arrow" className="size-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
               </div>
-              <div className="mt-3 flex items-center gap-2 font-display text-2xl">
+              <div className="mt-3 flex items-center gap-2 heading text-lg">
                 <Icon name={feature.icon} className="size-5 text-accent" />
                 {feature.title}
               </div>
@@ -98,6 +108,42 @@ export function Overview() {
                 <ReminderRow key={r.contract.id} reminder={r} />
               ))}
             </ul>
+          </Card>
+        </section>
+      )}
+
+      {usage && usage.total.calls + usage.total.cacheHits > 0 && (
+        <section className="mb-10">
+          <SectionTitle>AI usage</SectionTitle>
+          <Card className="overflow-hidden">
+            <div className="grid grid-cols-2 gap-px bg-line sm:grid-cols-4">
+              <Stat label="Tokens used" value={(usage.total.promptTokens + usage.total.outputTokens).toLocaleString("en")} hint={`${usage.total.outputTokens.toLocaleString("en")} of them output`} />
+              <Stat label="Model calls" value={usage.total.calls} />
+              <Stat label="Cache hits" value={usage.total.cacheHits} hint="Answered without a model" />
+              <Stat label="Tokens saved" value={<span className="text-minor">{usage.total.tokensSaved.toLocaleString("en")}</span>} hint="By the cache" />
+            </div>
+            <table className="w-full border-t border-line text-sm">
+              <thead>
+                <tr className="text-left text-[11px] tracking-wide text-muted uppercase">
+                  <th className="px-5 py-2 font-semibold">Step</th>
+                  <th className="px-3 py-2 text-right font-semibold">Calls</th>
+                  <th className="px-3 py-2 text-right font-semibold">Tokens per call</th>
+                  <th className="px-5 py-2 text-right font-semibold">Cache hits</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line border-t border-line font-mono text-[13px]">
+                {usage.byFeature.map((row) => (
+                  <tr key={row.feature}>
+                    <td className="px-5 py-2 font-sans text-sm">{USAGE_LABEL[row.feature] ?? row.feature}</td>
+                    <td className="px-3 py-2 text-right">{row.calls}</td>
+                    <td className="px-3 py-2 text-right">
+                      {row.calls > 0 ? Math.round((row.promptTokens + row.outputTokens) / row.calls).toLocaleString("en") : "–"}
+                    </td>
+                    <td className="px-5 py-2 text-right">{row.cacheHits}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </Card>
         </section>
       )}

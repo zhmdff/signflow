@@ -1,58 +1,64 @@
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
-import type { Contract } from "@/lib/types";
+import type { Clause, Contract, ContractFields, ContractKind, Usage } from "@/lib/types";
+import { db, transaction, writeContract } from "./db";
+import { logUsage, type Feature } from "./usage";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const CONTRACTS_DIR = path.join(DATA_DIR, "contracts");
-const CACHE_DIR = path.join(DATA_DIR, "cache");
-
-// Fallback for hosts with a read-only filesystem: uploads and cached results
-// live in memory for the lifetime of the server process.
-const g = globalThis as unknown as {
-  __signflow?: { contracts: Map<string, Contract>; cache: Map<string, unknown> };
-};
-const memory = (g.__signflow ??= { contracts: new Map(), cache: new Map() });
+type ContractRow = { id: string; kind: ContractKind; title: string; counterparty: string; fields: string; source: Contract["source"] };
+type ClauseRow = { contract_id: string; clause_id: string; heading: string; text: string };
 
 const KIND_ORDER = { own_terms: 0, partner: 1, employee: 2 } as const;
 
+function assemble(rows: ContractRow[], clauseRows: ClauseRow[]): Contract[] {
+  const clauses = new Map<string, Clause[]>();
+  for (const row of clauseRows) {
+    const list = clauses.get(row.contract_id) ?? [];
+    list.push({ id: row.clause_id, heading: row.heading, text: row.text });
+    clauses.set(row.contract_id, list);
+  }
+  return rows
+    .map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      title: row.title,
+      counterparty: row.counterparty,
+      clauses: clauses.get(row.id) ?? [],
+      fields: JSON.parse(row.fields) as ContractFields,
+      source: row.source,
+    }))
+    .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.counterparty.localeCompare(b.counterparty));
+}
+
 export async function listContracts(): Promise<Contract[]> {
-  const byId = new Map<string, Contract>();
-  const files = await readdir(CONTRACTS_DIR).catch(() => [] as string[]);
-  await Promise.all(
-    files
-      .filter((f) => f.endsWith(".json"))
-      .map(async (f) => {
-        const contract = JSON.parse(await readFile(path.join(CONTRACTS_DIR, f), "utf8")) as Contract;
-        byId.set(contract.id, contract);
-      }),
-  );
-  for (const [id, contract] of memory.contracts) byId.set(id, contract);
-  return [...byId.values()].sort(
-    (a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.counterparty.localeCompare(b.counterparty),
-  );
+  const rows = db().prepare("SELECT * FROM contracts").all() as ContractRow[];
+  const clauseRows = db().prepare("SELECT * FROM clauses ORDER BY contract_id, position").all() as ClauseRow[];
+  return assemble(rows, clauseRows);
 }
 
 export async function getContract(id: string): Promise<Contract | undefined> {
-  return (await listContracts()).find((c) => c.id === id);
+  const row = db().prepare("SELECT * FROM contracts WHERE id = ?").get(id) as ContractRow | undefined;
+  if (!row) return undefined;
+  const clauseRows = db()
+    .prepare("SELECT * FROM clauses WHERE contract_id = ? ORDER BY position")
+    .all(id) as ClauseRow[];
+  return assemble([row], clauseRows)[0];
 }
 
 export async function getOwnTerms(): Promise<Contract | undefined> {
-  return (await listContracts()).find((c) => c.kind === "own_terms");
+  const row = db().prepare("SELECT id FROM contracts WHERE kind = 'own_terms' LIMIT 1").get() as
+    | { id: string }
+    | undefined;
+  return row ? getContract(row.id) : undefined;
 }
 
 export async function saveContract(contract: Contract): Promise<void> {
-  try {
-    await mkdir(CONTRACTS_DIR, { recursive: true });
-    await writeFile(path.join(CONTRACTS_DIR, `${contract.id}.json`), JSON.stringify(contract, null, 2));
-  } catch {
-    memory.contracts.set(contract.id, contract);
-  }
+  transaction(() => writeContract(db(), contract));
 }
 
 export async function deleteContract(id: string): Promise<void> {
-  memory.contracts.delete(id);
-  await unlink(path.join(CONTRACTS_DIR, `${id}.json`)).catch(() => {});
+  transaction(() => {
+    db().prepare("DELETE FROM clauses_fts WHERE contract_id = ?").run(id);
+    db().prepare("DELETE FROM contracts WHERE id = ?").run(id);
+  });
 }
 
 export function slugify(value: string): string {
@@ -63,29 +69,63 @@ export function slugify(value: string): string {
     .slice(0, 48);
 }
 
+const sha = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
+
+/** Changes only when what the model would read changes, so renaming nothing costs nothing. */
+export function contractHash(contract: Contract): string {
+  return sha([contract.kind, contract.title, contract.counterparty, contract.fields, contract.clauses]);
+}
+
 /** Stable key for a cached AI result: changes whenever any input changes. */
 export function cacheKey(prefix: string, ...inputs: unknown[]): string {
-  const hash = createHash("sha256").update(JSON.stringify(inputs)).digest("hex").slice(0, 16);
-  return `${prefix}-${hash}`;
+  return `${prefix}-${sha(inputs)}`;
 }
 
-export async function readCache<T>(key: string): Promise<T | undefined> {
-  if (memory.cache.has(key)) return memory.cache.get(key) as T;
-  try {
-    const value = JSON.parse(await readFile(path.join(CACHE_DIR, `${key}.json`), "utf8")) as T;
-    memory.cache.set(key, value);
-    return value;
-  } catch {
-    return undefined;
-  }
+export function readCache<T>(key: string): T | undefined {
+  const row = db().prepare("SELECT value FROM cache WHERE key = ?").get(key) as { value: string } | undefined;
+  return row ? (JSON.parse(row.value) as T) : undefined;
 }
 
-export async function writeCache(key: string, value: unknown): Promise<void> {
-  memory.cache.set(key, value);
-  try {
-    await mkdir(CACHE_DIR, { recursive: true });
-    await writeFile(path.join(CACHE_DIR, `${key}.json`), JSON.stringify(value, null, 2));
-  } catch {
-    // Memory copy is enough.
+export function writeCache(key: string, value: unknown): void {
+  db()
+    .prepare(
+      `INSERT INTO cache (key, value, created_at) VALUES (?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, created_at = excluded.created_at`,
+    )
+    .run(key, JSON.stringify(value), new Date().toISOString());
+}
+
+// Identical requests that arrive while one is running share its result.
+const g = globalThis as unknown as { __signflowInflight?: Map<string, Promise<unknown>> };
+const inflight = (g.__signflowInflight ??= new Map());
+
+/**
+ * Returns the stored result for `key`, or runs `compute` and stores it.
+ * A hit is logged with the tokens the original call used, which is what it saved.
+ */
+export async function cached<T extends { usage: Usage }>(
+  feature: Feature,
+  key: string,
+  compute: () => Promise<T>,
+  opts: { force?: boolean } = {},
+): Promise<T & { cached: boolean }> {
+  if (!opts.force) {
+    const hit = readCache<T>(key);
+    if (hit) {
+      logUsage(feature, hit.usage, true);
+      return { ...hit, cached: true };
+    }
   }
+
+  let running = inflight.get(key) as Promise<T> | undefined;
+  if (!running) {
+    running = compute()
+      .then((value) => {
+        writeCache(key, value);
+        return value;
+      })
+      .finally(() => inflight.delete(key));
+    inflight.set(key, running);
+  }
+  return { ...(await running), cached: false };
 }

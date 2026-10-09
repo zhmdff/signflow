@@ -16,6 +16,10 @@ const PATHS = {
   refresh: "M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4",
   trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5",
   repeat: "M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3",
+  edit: "M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4",
+  plus: "M12 5v14M5 12h14",
+  up: "M12 19V5M6 11l6-6 6 6",
+  down: "M12 5v14M6 13l6 6 6-6",
   send: "M4 12l16-8-6 16-3-7-7-1z",
 } as const;
 

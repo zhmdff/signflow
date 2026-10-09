@@ -25,7 +25,7 @@ function SampleFinding() {
   return (
     <figure className="rounded-xl border border-line bg-surface shadow-[0_24px_60px_-30px_rgba(23,25,31,0.35)]">
       <div className="flex items-center gap-3 border-b border-line px-5 py-3">
-        <span className="font-display text-2xl leading-none">Liability</span>
+        <span className="heading text-lg leading-none">Liability</span>
         <Badge tone="critical">Critical</Badge>
         <span className="ml-auto font-mono text-[11px] text-muted">Caspian Freight</span>
       </div>
@@ -49,7 +49,7 @@ function SampleFinding() {
                 {q.clause}
               </span>
             </div>
-            <blockquote className="font-display text-lg leading-snug">“{q.quote}”</blockquote>
+            <blockquote className="text-[15px] leading-relaxed">“{q.quote}”</blockquote>
             <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-minor">
               <Icon name="check" className="size-3" />
               Found verbatim
@@ -84,8 +84,8 @@ export default function Home() {
             <div className="mb-5 font-mono text-[11px] tracking-[0.14em] text-accent uppercase">
               Contract review with receipts
             </div>
-            <h1 className="font-display text-5xl leading-[1.02] tracking-tight sm:text-7xl">
-              Find the conflict <em className="text-accent">before</em> the vendor does.
+            <h1 className="heading text-4xl leading-[1.08] sm:text-6xl">
+              Find the conflict <span className="text-accent underline decoration-accent/25 decoration-4 underline-offset-8">before</span> the vendor does.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
               SignFlow reads your contracts against your own terms and the law, so you find out about conflicts
@@ -106,7 +106,7 @@ export default function Home() {
 
         <section className="border-y border-line bg-surface">
           <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8">
-            <h2 className="max-w-2xl font-display text-4xl leading-tight sm:text-5xl">
+            <h2 className="max-w-2xl heading text-3xl leading-tight sm:text-4xl">
               Four checks on one clause index.
             </h2>
             <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2">
@@ -120,7 +120,7 @@ export default function Home() {
                     <span className="font-mono text-xs text-muted">0{i + 1}</span>
                     <Icon name={feature.icon} className="size-5 text-accent" />
                   </div>
-                  <h3 className="mt-6 font-display text-3xl leading-tight">{feature.title}</h3>
+                  <h3 className="mt-6 heading text-xl leading-tight">{feature.title}</h3>
                   <p className="mt-2 text-[15px] text-muted">{feature.blurb}</p>
                   <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
                     Open
@@ -133,14 +133,14 @@ export default function Home() {
         </section>
 
         <section className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8">
-          <h2 className="max-w-2xl font-display text-4xl leading-tight sm:text-5xl">
+          <h2 className="max-w-2xl heading text-3xl leading-tight sm:text-4xl">
             Why you can check its work.
           </h2>
           <ol className="mt-10 grid gap-8 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <li key={step.title} className="border-t border-ink pt-4">
                 <div className="font-mono text-xs text-muted">Step {i + 1}</div>
-                <h3 className="mt-2 font-display text-3xl">{step.title}</h3>
+                <h3 className="mt-2 heading text-xl">{step.title}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{step.text}</p>
               </li>
             ))}

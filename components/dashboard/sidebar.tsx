@@ -11,6 +11,7 @@ import { FEATURES } from "@/lib/nav";
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/dashboard", label: "Overview", icon: "overview" },
   { href: "/dashboard/contracts", label: "Contracts", icon: "file" },
+  { href: "/dashboard/terms", label: "Our terms", icon: "edit" },
   ...FEATURES,
 ];
 
@@ -24,7 +25,7 @@ export function Sidebar() {
         <Logo />
       </div>
 
-      <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible">
+      <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto px-3 pb-3 [scrollbar-width:none] lg:flex-col lg:overflow-visible">
         {NAV.map((item) => {
           const active = pathname === item.href;
           return (
@@ -35,7 +36,7 @@ export function Sidebar() {
               className={cn(
                 "flex shrink-0 items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-accent",
-                active ? "bg-ink font-medium text-paper" : "text-ink-soft hover:bg-line-soft",
+                active ? "bg-accent font-medium text-white" : "text-ink-soft hover:bg-line-soft",
               )}
             >
               <Icon name={item.icon} />
@@ -52,6 +53,8 @@ export function Sidebar() {
             <span className="truncate font-mono">{ai.configured ? ai.model : "No API key"}</span>
           </div>
         )}
+        {ai?.backupModel && <div className="truncate pl-4 font-mono">backup: {ai.backupModel}</div>}
+        {ai && ai.keyCount > 1 && <div className="pl-4">{ai.keyCount} keys in rotation</div>}
         <p>AI-assisted. Every finding needs human review.</p>
       </div>
     </aside>

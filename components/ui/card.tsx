@@ -19,7 +19,7 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
   return (
     <div className="min-w-0 bg-surface px-5 py-4">
       <div className="text-[11px] font-semibold tracking-[0.14em] text-muted uppercase">{label}</div>
-      <div className="mt-1 font-display text-4xl leading-none tabular-nums">{value}</div>
+      <div className="mt-1 heading text-3xl leading-none tabular-nums">{value}</div>
       {hint && <div className="mt-1.5 text-xs text-muted">{hint}</div>}
     </div>
   );

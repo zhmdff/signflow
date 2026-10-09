@@ -1,5 +1,16 @@
+import { connection } from "next/server";
 import { HttpError, respond } from "@/lib/server/respond";
 import { deleteContract, getContract } from "@/lib/server/store";
+
+export async function GET(_request: Request, ctx: RouteContext<"/api/contracts/[id]">) {
+  await connection();
+  return respond(async () => {
+    const { id } = await ctx.params;
+    const contract = await getContract(id);
+    if (!contract) throw new HttpError("Contract not found.", 404);
+    return { contract };
+  });
+}
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/contracts/[id]">) {
   return respond(async () => {

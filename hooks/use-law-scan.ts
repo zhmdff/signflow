@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { Contract, LawImpact } from "@/lib/types";
 import { useLawStore } from "@/stores/law-store";
 import { useContracts } from "./use-contracts";
@@ -15,6 +15,14 @@ export function useLawScan() {
   const error = useLawStore((s) => s.error);
   const setLawText = useLawStore((s) => s.setLawText);
   const scan = useLawStore((s) => s.scan);
+  const history = useLawStore((s) => s.history);
+  const loadHistory = useLawStore((s) => s.loadHistory);
+  const open = useLawStore((s) => s.open);
+  const removeScan = useLawStore((s) => s.removeScan);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   // Impacts arrive sorted by risk, so each group and the group order keep the worst first.
   const groups = useMemo(() => {
@@ -38,5 +46,8 @@ export function useLawScan() {
     groups,
     scannedCount: contracts.filter((c) => c.kind !== "own_terms").length,
     scan,
+    history,
+    open,
+    removeScan,
   };
 }

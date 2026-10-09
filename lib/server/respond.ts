@@ -1,4 +1,4 @@
-import { AiError } from "./gemini";
+import { AiError } from "./ai-shared";
 
 export class HttpError extends Error {
   constructor(

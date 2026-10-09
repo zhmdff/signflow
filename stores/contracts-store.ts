@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { api, errorMessage, type UploadInput } from "@/lib/api";
-import type { Contract } from "@/lib/types";
-
-export type AsyncStatus = "idle" | "loading" | "ready" | "error";
+import { api, errorMessage, type UploadInput, type UploadResult } from "@/lib/api";
+import type { TermsInput } from "@/lib/terms";
+import type { AsyncStatus, Contract } from "@/lib/types";
+import { useCompareStore } from "./compare-store";
 
 type ContractsState = {
   contracts: Contract[];
@@ -10,9 +10,13 @@ type ContractsState = {
   error: string | null;
   uploading: boolean;
   uploadError: string | null;
+  /** The most recent successful upload, for showing what it cost. */
+  lastUpload: UploadResult | null;
   load: (opts?: { force?: boolean }) => Promise<void>;
   upload: (input: UploadInput) => Promise<Contract | null>;
   remove: (id: string) => Promise<void>;
+  /** Saves the company's own terms. Resolves to an error message, or null on success. */
+  saveTerms: (input: TermsInput) => Promise<string | null>;
   clearUploadError: () => void;
 };
 
@@ -22,6 +26,7 @@ export const useContractsStore = create<ContractsState>()((set, get) => ({
   error: null,
   uploading: false,
   uploadError: null,
+  lastUpload: null,
 
   load: async ({ force = false } = {}) => {
     const { status } = get();
@@ -35,11 +40,13 @@ export const useContractsStore = create<ContractsState>()((set, get) => ({
   },
 
   upload: async (input) => {
-    set({ uploading: true, uploadError: null });
+    set({ uploading: true, uploadError: null, lastUpload: null });
     try {
-      const { contract } = await api.upload(input);
+      const result = await api.upload(input);
+      const { contract } = result;
       set((s) => ({
         uploading: false,
+        lastUpload: result,
         contracts: [...s.contracts.filter((c) => c.id !== contract.id), contract],
       }));
       return contract;
@@ -56,6 +63,20 @@ export const useContractsStore = create<ContractsState>()((set, get) => ({
       await api.removeContract(id);
     } catch (err) {
       set({ contracts: previous, error: errorMessage(err) });
+    }
+  },
+
+  saveTerms: async (input) => {
+    try {
+      const contract = await api.saveTerms(input);
+      set((s) => ({
+        contracts: [contract, ...s.contracts.filter((c) => c.id !== contract.id && c.kind !== "own_terms")],
+      }));
+      // Comparisons were made against the old terms, so they no longer hold.
+      useCompareStore.getState().reset();
+      return null;
+    } catch (err) {
+      return errorMessage(err);
     }
   },
 

@@ -32,7 +32,13 @@ export type QuoteStatus = "exact" | "moved" | "unverified";
 
 export type Quote = { clauseId: string; text: string; status: QuoteStatus };
 
-export type Usage = { promptTokens: number; outputTokens: number; calls: number };
+export type Usage = {
+  promptTokens: number;
+  outputTokens: number;
+  calls: number;
+  /** Which model answered. Shows when the backup stepped in. */
+  model?: string;
+};
 
 export type CitationStats = { quotes: number; verified: number };
 
@@ -103,6 +109,7 @@ export type LawImpact = {
 };
 
 export type LawScanResult = {
+  id: string;
   lawTitle: string;
   rules: LawRule[];
   impacts: LawImpact[];
@@ -119,11 +126,40 @@ export type AskResult = {
   found: boolean;
   confidence: Confidence;
   citations: Citation[];
+  /** How many clauses were sent to the model, out of how many were in scope. */
+  context: { sent: number; total: number };
   usage: Usage;
+  cached: boolean;
 };
 
 export type ChatMessage =
   | { id: string; role: "user"; text: string }
   | { id: string; role: "assistant"; text: string; result?: AskResult; error?: boolean };
 
-export type AiStatus = { configured: boolean; model: string };
+export type UsageRow = {
+  feature: string;
+  /** Calls that reached a model. */
+  calls: number;
+  promptTokens: number;
+  outputTokens: number;
+  /** Requests answered from the cache instead. */
+  cacheHits: number;
+  /** Tokens those hits would have cost. */
+  tokensSaved: number;
+};
+
+export type UsageSummary = { byFeature: UsageRow[]; total: UsageRow };
+
+export type LawScanSummary = { id: string; at: string; title: string; rules: number; impacts: number };
+
+export type AsyncStatus = "idle" | "loading" | "ready" | "error";
+
+export type AiStatus = {
+  configured: boolean;
+  /** The model that answers first. */
+  model: string;
+  /** The model used when the first one fails, if a key for it is set. */
+  backupModel: string | null;
+  /** How many keys are configured, across both providers. Calls fall through them in order. */
+  keyCount: number;
+};

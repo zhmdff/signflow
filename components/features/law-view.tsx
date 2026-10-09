@@ -35,7 +35,7 @@ function RuleCard({ rule }: { rule: LawRule }) {
             <dd>{rule.penalty ?? "Not stated"}</dd>
           </div>
         </dl>
-        <p className={cn("mt-2 border-l-2 pl-3 font-display text-base leading-snug text-ink-soft", rule.quoteVerified ? "border-ink/25" : "border-dashed border-major")}>
+        <p className={cn("mt-2 border-l-2 pl-3 text-sm leading-relaxed text-ink-soft", rule.quoteVerified ? "border-ink/25" : "border-dashed border-major")}>
           “{rule.quote}”
           {!rule.quoteVerified && (
             <span className="mt-0.5 block font-sans text-[11px] font-medium text-major">
@@ -57,7 +57,7 @@ function ImpactGroupCard({ group, rules }: { group: ImpactGroup; rules: Map<stri
         <button
           type="button"
           onClick={() => openViewer(contract.id)}
-          className="font-display text-2xl leading-none hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+          className="heading text-lg leading-none hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
         >
           {contract.counterparty}
         </button>
@@ -94,7 +94,8 @@ function ImpactGroupCard({ group, rules }: { group: ImpactGroup; rules: Map<stri
 }
 
 export function LawView() {
-  const { lawText, setLawText, status, result, error, groups, scannedCount, scan } = useLawScan();
+  const { lawText, setLawText, status, result, error, groups, scannedCount, scan, history, open, removeScan } =
+    useLawScan();
   const running = status === "loading";
   const rules = new Map(result?.rules.map((r) => [r.id, r]));
 
@@ -140,6 +141,43 @@ export function LawView() {
         </div>
       </Card>
 
+      {history.length > 0 && (
+        <section className="mb-8">
+          <SectionTitle>Previous scans</SectionTitle>
+          <Card>
+            <ul className="divide-y divide-line">
+              {history.map((scan) => (
+                <li key={scan.id} className="flex items-center gap-3 px-5 py-2.5">
+                  <button
+                    type="button"
+                    disabled={running}
+                    onClick={() => open(scan.id)}
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-left text-sm font-medium hover:text-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50",
+                      result?.id === scan.id && "text-accent",
+                    )}
+                  >
+                    {scan.title}
+                  </button>
+                  <span className="hidden shrink-0 font-mono text-[11px] text-muted sm:block">
+                    {scan.rules} rules, {scan.impacts} to amend
+                  </span>
+                  <span className="shrink-0 text-xs text-muted">{formatDate(scan.at.slice(0, 10))}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeScan(scan.id)}
+                    aria-label={`Delete scan: ${scan.title}`}
+                    className="rounded-md p-1.5 text-muted hover:bg-critical-soft hover:text-critical focus-visible:outline-2 focus-visible:outline-accent"
+                  >
+                    <Icon name="trash" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      )}
+
       {error && (
         <div className="mb-6">
           <ErrorNote>{error}</ErrorNote>
@@ -156,7 +194,7 @@ export function LawView() {
       {result && !running && (
         <div className="space-y-8">
           <Card className="p-5">
-            <h2 className="font-display text-3xl leading-tight">{result.lawTitle}</h2>
+            <h2 className="heading text-2xl leading-tight">{result.lawTitle}</h2>
             <p className="mt-1 text-sm text-muted">
               {result.rules.length} rule{result.rules.length === 1 ? "" : "s"} extracted. {groups.length} of{" "}
               {scannedCount} contracts affected, {result.impacts.length} clause

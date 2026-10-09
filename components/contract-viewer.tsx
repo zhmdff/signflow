@@ -45,7 +45,7 @@ export function ContractViewer() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <KindBadge kind={contract.kind} />
-              <h2 className="mt-2 font-display text-3xl leading-tight">{contract.title}</h2>
+              <h2 className="mt-2 heading text-2xl leading-tight">{contract.title}</h2>
               <p className="mt-0.5 text-sm text-muted">{contract.counterparty}</p>
             </div>
             <button
@@ -90,7 +90,7 @@ export function ContractViewer() {
                 </span>
                 <div className="min-w-0">
                   {clause.heading && <div className="text-sm font-semibold">{clause.heading}</div>}
-                  <p className="font-display text-[17px] leading-snug text-ink-soft">{clause.text}</p>
+                  <p className="text-[15px] leading-relaxed text-ink-soft">{clause.text}</p>
                 </div>
               </li>
             );

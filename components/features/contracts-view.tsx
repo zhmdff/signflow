@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { AiKeyNotice } from "@/components/ai-key-notice";
 import { PageHeader } from "@/components/page-header";
 import { KindBadge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icons";
 import { EmptyState, ErrorNote, LoadingBlock } from "@/components/ui/states";
@@ -28,7 +29,7 @@ function ContractRow({ contract, onRemove }: { contract: Contract; onRemove: (id
           <button
             type="button"
             onClick={() => view(contract.id)}
-            className="truncate text-left font-display text-2xl leading-tight hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+            className="truncate text-left heading text-lg leading-tight hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
           >
             {contract.counterparty}
           </button>
@@ -52,6 +53,12 @@ function ContractRow({ contract, onRemove }: { contract: Contract; onRemove: (id
           <Icon name="ask" className="size-3.5" />
           Ask
         </Button>
+        {contract.kind === "own_terms" && (
+          <Link href="/dashboard/terms" className={buttonClass("secondary", "sm")}>
+            <Icon name="edit" className="size-3.5" />
+            Edit
+          </Link>
+        )}
         {contract.kind === "partner" && (
           <Button variant="secondary" size="sm" onClick={() => compare(contract.id)}>
             <Icon name="compare" className="size-3.5" />

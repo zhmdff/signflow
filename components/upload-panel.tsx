@@ -26,7 +26,7 @@ export function UploadPanel({
   lockKind?: boolean;
   onUploaded?: (contract: Contract) => void;
 }) {
-  const { upload, uploading, error, clearError } = useUpload();
+  const { upload, uploading, error, clearError, lastUpload } = useUpload();
   const [mode, setMode] = useState<"file" | "text">("file");
   const [kind, setKind] = useState<ContractKind>(defaultKind);
   const [file, setFile] = useState<File | null>(null);
@@ -137,6 +137,17 @@ export function UploadPanel({
         )}
 
         {error && <ErrorNote>{error}</ErrorNote>}
+
+        {lastUpload && !uploading && !error && (
+          <p className="flex items-start gap-1.5 text-sm text-minor">
+            <Icon name="check" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              Added {lastUpload.contract.counterparty}: {lastUpload.contract.clauses.length} clauses,{" "}
+              {lastUpload.splitBy === "code" ? "split in code" : "split by the model"},{" "}
+              {(lastUpload.usage.promptTokens + lastUpload.usage.outputTokens).toLocaleString("en")} tokens.
+            </span>
+          </p>
+        )}
 
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={!ready || uploading}>

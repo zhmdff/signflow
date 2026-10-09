@@ -10,6 +10,7 @@ export function useContracts() {
   const error = useContractsStore((s) => s.error);
   const load = useContractsStore((s) => s.load);
   const remove = useContractsStore((s) => s.remove);
+  const saveTerms = useContractsStore((s) => s.saveTerms);
 
   useEffect(() => {
     void load();
@@ -27,8 +28,9 @@ export function useContracts() {
       byId: new Map(contracts.map((c) => [c.id, c])),
       reload: () => load({ force: true }),
       remove,
+      saveTerms,
     }),
-    [contracts, status, error, load, remove],
+    [contracts, status, error, load, remove, saveTerms],
   );
 }
 
@@ -37,5 +39,6 @@ export function useUpload() {
   const uploading = useContractsStore((s) => s.uploading);
   const error = useContractsStore((s) => s.uploadError);
   const clearError = useContractsStore((s) => s.clearUploadError);
-  return { upload, uploading, error, clearError };
+  const lastUpload = useContractsStore((s) => s.lastUpload);
+  return { upload, uploading, error, clearError, lastUpload };
 }

@@ -9,12 +9,19 @@ export function useCompare() {
   const selectedId = useCompareStore((s) => s.selectedId);
   const select = useCompareStore((s) => s.select);
   const run = useCompareStore((s) => s.run);
+  const loadSaved = useCompareStore((s) => s.loadSaved);
 
   // Fall back to the first partner contract when nothing valid is selected.
   const selected = partners.find((c) => c.id === selectedId) ?? partners[0] ?? null;
   useEffect(() => {
     if (selected && selected.id !== selectedId) select(selected.id);
   }, [selected, selectedId, select]);
+
+  // Show a comparison saved earlier without spending a model call.
+  const selectedKey = selected?.id;
+  useEffect(() => {
+    if (selectedKey) void loadSaved(selectedKey);
+  }, [selectedKey, loadSaved]);
 
   const entry = useCompareStore((s) => (selected ? s.entries[selected.id] : undefined)) ?? IDLE_ENTRY;
 

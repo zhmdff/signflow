@@ -29,6 +29,7 @@ export function ReviewNotice({
       {usage && usage.calls > 0 && (
         <span className="font-mono">
           {(usage.promptTokens + usage.outputTokens).toLocaleString("en")} tokens
+          {usage.model && ` · ${usage.model}`}
         </span>
       )}
       {cached && <span>Served from cache</span>}

@@ -45,7 +45,7 @@ export function QuoteBlock({ contract, quote, label }: { contract: Contract; quo
         {label && <span className="text-[11px] font-semibold tracking-wide text-muted uppercase">{label}</span>}
         <ClauseChip contract={contract} clauseId={quote.clauseId} short={Boolean(label)} />
       </div>
-      <blockquote className={cn("font-display text-[17px] leading-snug", bad && "text-ink-soft")}>
+      <blockquote className={cn("text-[15px] leading-relaxed", bad && "text-ink-soft")}>
         “{quote.text}”
       </blockquote>
       <figcaption

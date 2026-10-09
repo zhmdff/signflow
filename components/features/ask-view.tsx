@@ -55,7 +55,21 @@ function AssistantMessage({
         </div>
       )}
 
-      <p className="mt-4 text-[11px] text-muted">AI-assisted. Needs human review.</p>
+      <p className="mt-4 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted">
+        <span>AI-assisted. Needs human review.</span>
+        {result?.context && (
+          <span className="font-mono">
+            read {result.context.sent} of {result.context.total} clauses
+          </span>
+        )}
+        {result && (
+          <span className="font-mono">
+            {result.cached
+              ? "from cache, 0 tokens"
+              : `${(result.usage.promptTokens + result.usage.outputTokens).toLocaleString("en")} tokens`}
+          </span>
+        )}
+      </p>
     </Card>
   );
 }
@@ -109,7 +123,7 @@ export function AskView() {
       <div className="space-y-4 pb-44">
         {messages.length === 0 && (
           <div className="rounded-lg border border-dashed border-line px-6 py-8">
-            <div className="font-display text-2xl">Try one of these</div>
+            <div className="heading text-lg">Try one of these</div>
             <div className="mt-3 flex flex-col items-start gap-2">
               {SAMPLE_QUESTIONS.map((q) => (
                 <button
@@ -129,7 +143,7 @@ export function AskView() {
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-lg rounded-br-sm bg-ink px-4 py-2.5 text-[15px] whitespace-pre-wrap text-paper">
+              <p className="max-w-[85%] rounded-lg rounded-br-sm bg-accent px-4 py-2.5 text-[15px] whitespace-pre-wrap text-white">
                 {m.text}
               </p>
             </div>

@@ -7,10 +7,10 @@ import type {
   Severity,
   Topic,
 } from "@/lib/types";
-import { callGemini } from "./gemini";
+import { callModel } from "./ai";
 import { QUOTE_RULES, renderContract } from "./prompts";
 import { compareSchema } from "./schemas";
-import { cacheKey, readCache, writeCache } from "./store";
+import { cached, cacheKey, contractHash, readCache } from "./store";
 import { citationStats, verifyQuote } from "./verify";
 
 type RawQuote = { clauseId: string; text: string } | null;
@@ -50,46 +50,58 @@ ${QUOTE_RULES}`;
 
 const SEVERITY_ORDER: Record<Severity, number> = { critical: 0, major: 1, minor: 2 };
 
+const comparisonKey = (contract: Contract, terms: Contract) =>
+  cacheKey("compare", contractHash(contract), contractHash(terms));
+
+/** The stored comparison for these two documents as they are now, if one exists. No model call. */
+export function savedComparison(contract: Contract, terms: Contract): CompareResult | null {
+  const hit = readCache<Omit<CompareResult, "cached">>(comparisonKey(contract, terms));
+  return hit ? { ...hit, cached: true } : null;
+}
+
 export async function compareContract(
   contract: Contract,
   terms: Contract,
   opts: { force?: boolean } = {},
 ): Promise<CompareResult> {
-  const key = cacheKey("compare", contract, terms);
-  if (!opts.force) {
-    const hit = await readCache<CompareResult>(key);
-    if (hit) return { ...hit, cached: true };
-  }
+  return cached(
+    "compare",
+    comparisonKey(contract, terms),
+    async (): Promise<Omit<CompareResult, "cached">> => {
+      const prompt = `OUR TERMS
+${renderContract(terms)}
 
-  const prompt = `OUR TERMS\n${renderContract(terms)}\n\nPARTNER CONTRACT\n${renderContract(contract)}\n\nCompare the PARTNER CONTRACT against OUR TERMS.`;
-  const { data, usage } = await callGemini<Raw>(prompt, compareSchema, { system: SYSTEM });
+PARTNER CONTRACT
+${renderContract(contract)}
 
-  const findings: Finding[] = (data.findings ?? [])
-    .map((f) => ({
-      ...f,
-      ourQuote: verifyQuote(terms, f.ourQuote),
-      theirQuote: verifyQuote(contract, f.theirQuote),
-    }))
-    .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+Compare the PARTNER CONTRACT against OUR TERMS.`;
+      const { data, usage } = await callModel<Raw>(prompt, compareSchema, { feature: "compare", system: SYSTEM });
 
-  const missingClauses: MissingClause[] = (data.missingClauses ?? [])
-    .map((m) => ({ ...m, ourQuote: verifyQuote(terms, m.ourQuote) }))
-    .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+      const findings: Finding[] = (data.findings ?? [])
+        .map((f) => ({
+          ...f,
+          ourQuote: verifyQuote(terms, f.ourQuote),
+          theirQuote: verifyQuote(contract, f.theirQuote),
+        }))
+        .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 
-  const result: CompareResult = {
-    contractId: contract.id,
-    termsId: terms.id,
-    summary: data.summary ?? "",
-    findings,
-    missingClauses,
-    stats: citationStats([
-      ...findings.flatMap((f) => [f.ourQuote, f.theirQuote]),
-      ...missingClauses.map((m) => m.ourQuote),
-    ]),
-    usage,
-    cached: false,
-  };
+      const missingClauses: MissingClause[] = (data.missingClauses ?? [])
+        .map((m) => ({ ...m, ourQuote: verifyQuote(terms, m.ourQuote) }))
+        .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 
-  await writeCache(key, result);
-  return result;
+      return {
+        contractId: contract.id,
+        termsId: terms.id,
+        summary: data.summary ?? "",
+        findings,
+        missingClauses,
+        stats: citationStats([
+          ...findings.flatMap((f) => [f.ourQuote, f.theirQuote]),
+          ...missingClauses.map((m) => m.ourQuote),
+        ]),
+        usage,
+      };
+    },
+    opts,
+  );
 }

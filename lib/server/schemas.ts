@@ -1,5 +1,5 @@
 import { TOPICS } from "@/lib/types";
-import type { Schema } from "./gemini";
+import type { Schema } from "./ai-shared";
 
 const str = (description?: string): Schema => ({ type: "STRING", description });
 const nullableStr = (description?: string): Schema => ({ type: "STRING", nullable: true, description });
@@ -28,17 +28,10 @@ const quote = (side: string): Schema => ({
   nullable: true,
 });
 
-export const ingestSchema = obj({
+const contractMeta = {
   title: str("Document title"),
   counterparty: str("The other party: the partner company or the employee's full name"),
   kind: oneOf(["own_terms", "employee", "partner"]),
-  clauses: list(
-    obj({
-      id: str("Clause number or letter as printed, e.g. 4.2. Number sequentially if unnumbered."),
-      heading: str("Short heading for the clause"),
-      text: str("Full clause text, verbatim"),
-    }),
-  ),
   fields: obj({
     start: nullableStr(isoDate),
     end: nullableStr(isoDate),
@@ -50,6 +43,21 @@ export const ingestSchema = obj({
     },
     governingLaw: nullableStr(),
   }),
+};
+
+/** Used when code has already split the clauses: the model only reads, it does not retype. */
+export const contractMetaSchema = obj(contractMeta);
+
+/** Used for PDFs and contracts without clear numbering: the model splits the clauses too. */
+export const ingestSchema = obj({
+  ...contractMeta,
+  clauses: list(
+    obj({
+      id: str("Clause number as printed at its most detailed level, e.g. 4.2 not 4. Number sequentially if unnumbered."),
+      heading: str("Short heading for the clause"),
+      text: str("Full clause text, verbatim"),
+    }),
+  ),
 });
 
 export const compareSchema = obj({
