@@ -72,7 +72,7 @@ async function route<T>(prompt: string | Part[], schema: Schema, opts: CallOptio
   const all = targets();
   if (all.length === 0) {
     throw new AiError(
-      "No AI key is set. Add GEMINI_API_KEY (or GROQ_API_KEY) to .env.local and restart the dev server.",
+      "No AI key is set. Add GEMINI_API_KEY (or GROQ_API_KEY) to your .env file and restart the server.",
       503,
       "no_key",
     );

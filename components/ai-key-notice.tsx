@@ -14,7 +14,7 @@ export function AiKeyNotice() {
         <span className="font-semibold">No AI key yet.</span> Add{" "}
         <code className="font-mono text-[13px]">GEMINI_API_KEY=…</code> (or{" "}
         <code className="font-mono text-[13px]">GROQ_API_KEY=…</code>) to{" "}
-        <code className="font-mono text-[13px]">.env.local</code> and restart the dev server. Until then you can
+        <code className="font-mono text-[13px]">.env</code> and restart the server. Until then you can
         browse contracts and reminders, but compare, law scan, ask and upload will not run.
       </p>
     </div>

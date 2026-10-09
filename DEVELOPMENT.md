@@ -8,13 +8,17 @@ Setup, structure and internals. For what the product does, see [README.md](READM
 pnpm install
 ```
 
-Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` (from [AI Studio](https://aistudio.google.com/apikey)). Optionally set `GROQ_API_KEY` as a backup: if a Gemini call fails, the same request is sent to Groq. The backup cannot read PDFs, only text. Each provider also accepts extra keys as a comma-separated list in `GEMINI_API_KEYS` and `GROQ_API_KEYS`; a key that fails is rested and the next one is tried. Then:
+Copy `.env.example` to `.env` and set `DATABASE_URL` to a Postgres connection string and `GEMINI_API_KEY` (from [AI Studio](https://aistudio.google.com/apikey)). Optionally set `GROQ_API_KEY` as a backup: if a Gemini call fails, the same request is sent to Groq. The backup cannot read PDFs, only text. Each provider also accepts extra keys as a comma-separated list in `GEMINI_API_KEYS` and `GROQ_API_KEYS`; a key that fails is rested and the next one is tried. Then:
 
 ```bash
 pnpm dev
 ```
 
 Open http://localhost:3000. Without a key you can browse the contracts and the reminders page; compare, law scan, ask and upload need the key.
+
+## Deploying
+
+The app keeps nothing on disk, so it runs on serverless hosts such as Vercel. Set the same variables there as in `.env`: `DATABASE_URL`, `GEMINI_API_KEY`, and optionally `GROQ_API_KEY`, `GEMINI_API_KEYS` and `GROQ_API_KEYS`. Use the pooled Neon connection string (the host name contains `-pooler`).
 
 ## Pages
 
@@ -32,8 +36,8 @@ Open http://localhost:3000. Without a key you can browse the contracts and the r
 
 ## Where things are
 
-- `data/signflow.db` is the SQLite database (Node's built-in `node:sqlite`, no dependency). It holds contracts, clauses, a full-text index, cached AI results, the usage log, law scan history and the chat. It is created on first run and is not committed. Delete it to reset to the sample data.
-- `data/contracts/` holds the sample contracts that seed a new database. `data/samples/` has a long contract to upload.
+- The database is Postgres (built for [Neon](https://neon.tech)), reached through `DATABASE_URL`. It holds contracts, clauses with a full-text index, cached AI results, the usage log, law scan history and the chat. The tables are created on first run, and an empty database is filled with the sample contracts.
+- `data/contracts/` holds the sample contracts that seed an empty database. `data/samples/` has a long contract to upload.
 - `lib/server/` is the server side: `db.ts` and `store.ts` (database and cache), `ai.ts` (`callModel`, which tries `gemini.ts` then `groq.ts`), `split.ts` (splits numbered contracts in code), `search.ts` (picks the clauses a question needs), `usage.ts`, `schemas.ts`, `ingest.ts`, `compare.ts`, `law-scan.ts`, `ask.ts`, and `verify.ts` (the quote verifier).
 - `app/api/` has one route per call. `lib/api.ts` is the typed client for them.
 - `stores/` holds the zustand stores and `hooks/` the hooks pages use.
